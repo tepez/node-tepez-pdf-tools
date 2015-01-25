@@ -1,0 +1,22 @@
+{
+  "name": "tepez-pdf-tools",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tepez/node-tepez-pdf-tools.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tepez/node-tepez-pdf-tools/issues"
+  },
+  "homepage": "https://github.com/tepez/node-tepez-pdf-tools",
+  "dependencies": {
+    "joi": "^5.1.0"
+  }
+}
