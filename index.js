@@ -13,15 +13,16 @@ function pdfTools(options, callback) {
 
   Joi.assert(callback, Joi.func());
   Joi.assert(options, Joi.object().keys({
-      sourcePath: Joi.string().description('path to the source file'),
-      sourceContent: Joi.any().description('the content of the source file'),
-      destinationPath: Joi.string().description('path to the destination file'),
-      font: Joi.string(),
-      cert: Joi.string(),
-      certpass: Joi.string(),
-      certformat: Joi.string(),
-      data: Joi.string(),
-      spawnOptions: Joi.object().description('options for the spawn command')
+    nailgun: Joi.bool().description('use nailgun'),
+    sourcePath: Joi.string().description('path to the source file'),
+    sourceContent: Joi.any().description('the content of the source file'),
+    destinationPath: Joi.string().description('path to the destination file'),
+    font: Joi.string(),
+    cert: Joi.string(),
+    certpass: Joi.string(),
+    certformat: Joi.string(),
+    data: Joi.string(),
+    spawnOptions: Joi.object().description('options for the spawn command')
   })
 
     .xor('sourcePath', 'sourceContent')
@@ -32,11 +33,25 @@ function pdfTools(options, callback) {
 
   );
 
-  var jarPath = process.env.TP_PDF_TOOLS_JAR || 'tepez-pdf-tools.jar';
+  if (options.nailgun == null) {
+    options.nailgun = true;
+  }
 
-  //var args = ['java', '-jar', quote(jarPath), '--quite', '--destination', '-'];
+  var args = [];
 
-  var args = ['ng', 'Main', '--quite', '--destination', '-'];
+  // either use nailgun client or the JAR directly
+  if (options.nailgun) {
+    var ngPath = process.env.TP_PDF_TOOLS_NG_PATH ? quote(process.env.TP_PDF_TOOLS_NG_PATH) : 'ng';
+    args.push(ngPath, 'pdfTools.Main');
+
+  } else {
+    var jarPath = process.env.TP_PDF_TOOLS_JAR_PATH ? quote(process.env.TP_PDF_TOOLS_JAR_PATH) : 'tepez-pdf-tools.jar';
+    args.push('java', '-jar', jarPath);
+  }
+
+//  console.log(args);
+
+  args.push('--quite', '--destination', '-');
 
   [ 'font', 'cert', 'certpass', 'certformat', 'data' ].forEach(function(key) {
     var val = options[key];

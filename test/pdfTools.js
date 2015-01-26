@@ -6,8 +6,10 @@ var expect = require('chai').expect,
   tmp = require('tmp'),
   data = require('./assets/data.json');
 
+
 bluedbird.promisifyAll(fs);
 bluedbird.promisifyAll(tmp);
+
 
 // return the absolute path of an asset
 function getAssetPath(asset) {
@@ -194,26 +196,32 @@ describe('tepez-pdf-tools', function() {
 
   specs.forEach(function(spec, specIdx) {
 
-    it(spec.desc + ' (spec ' + specIdx + ')', function (done) {
-
+    function test(withNailgun, done) {
       var resBuffers = [];
 
       var pdfToolsOptions = spec.options.call(this);
+      pdfToolsOptions.nailgun = withNailgun;
 
       var stdout = pdfTools(pdfToolsOptions, function (err) {
         var res = Buffer.concat(resBuffers);
         expect(err).to.equal(null);
 
         var expected = assets[spec.expected];
-        expect(res.length).to.equal(expected.length);
+
+        // check how much the expected and the result files are common
         var matchRate = getMatchRate(res, expected);
 
+        // if not almost identical (except for dates that change every time we generate)
+        // write the file that we got so we can inspect it
         if (matchRate <= 0.99) {
           var resPath = getAssetPath('result/' + spec.expected + '.pdf');
           fs.writeFileSync(resPath, res);
           console.log('Check out ' + resPath + ' to figure out what is wrong with it');
         }
 
+        // it's important not to do the excepts before, because that would raise an error
+        // and we won't have the pdf file in the result dir to inspect
+        expect(res.length).to.equal(expected.length);
         expect(matchRate).to.be.greaterThan(0.99);
 
         done()
@@ -222,7 +230,17 @@ describe('tepez-pdf-tools', function() {
       stdout.on('data',function(buffer){
         resBuffers.push(buffer);
       });
+    }
 
+    describe(spec.desc + ' (spec ' + specIdx + ')', function () {
+
+      it('with nailgun', function (done) {
+        test(true, done);
+      });
+
+      it('without nailgun', function (done) {
+        test(false, done);
+      });
 
     });
 
