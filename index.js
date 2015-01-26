@@ -34,7 +34,9 @@ function pdfTools(options, callback) {
 
   var jarPath = process.env.TP_PDF_TOOLS_JAR || 'tepez-pdf-tools.jar';
 
-  var args = ['java', '-jar', quote(jarPath), '--quite', '--destination', '-'];
+  //var args = ['java', '-jar', quote(jarPath), '--quite', '--destination', '-'];
+
+  var args = ['ng', 'Main', '--quite', '--destination', '-'];
 
   [ 'font', 'cert', 'certpass', 'certformat', 'data' ].forEach(function(key) {
     var val = options[key];
@@ -50,6 +52,8 @@ function pdfTools(options, callback) {
   } else {
     args.push(quote(options.sourcePath));
   }
+
+//  console.log(args);
 
   var child;
   if (process.platform === 'win32') {

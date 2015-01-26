@@ -2,9 +2,12 @@ var expect = require('chai').expect,
  pdfTools = require('..'),
  path = require('path'),
  fs = require('fs'),
- bluedbird = require('bluebird');
+ bluedbird = require('bluebird'),
+  tmp = require('tmp'),
+  data = require('./assets/data.json');
 
 bluedbird.promisifyAll(fs);
+bluedbird.promisifyAll(tmp);
 
 // return the absolute path of an asset
 function getAssetPath(asset) {
@@ -27,29 +30,51 @@ function getMatchRate(buffer1, buffer2) {
 
 describe('tepez-pdf-tools', function() {
 
-  var assets, resBuffers, stdout;
-
-  function accumulateResult() {
-    stdout.on('data',function(buffer){
-      resBuffers.push(buffer);
+  describe('when sourcePath and sourceContent are given', function () {
+    it('should throw an error', function () {
+      expect(function() {
+        pdfTools({ sourcePath: getAssetPath('src.pdf'), sourceContent: assets.src });
+      }).to.throw(Error, 'value contains a conflict between exclusive peers sourcePath, sourceContent');
     });
-  }
+  });
 
-  function testPdfMatch(res, name) {
-    expected = assets[name];
-    expect(res.length).to.equal(expected.length);
-    var matchRate = getMatchRate(res, expected);
+  describe('when certpass is given without cert', function () {
+    it('should throw an error', function () {
+      expect(function() {
+        pdfTools({ sourceContent: assets.src, certpass: 'password' });
+      }).to.throw(Error);
+    });
+  });
 
-    if (matchRate <= 0.99) {
-      var resPath = getAssetPath('result/' + name + '.pdf');
-      fs.writeFileSync(resPath, res);
-      console.log('Check out ' + resPath + ' to figure out what is wrong with it');
-    }
+  describe('when certformat is given without cert', function () {
+    it('should throw an error', function () {
+      expect(function() {
+        pdfTools({ sourceContent: assets.src, certformat: 'pkcs12' });
+      }).to.throw(Error);
+    });
+  });
 
-    expect(matchRate).to.be.greaterThan(0.99);
+  var assets, dataPath;
 
-  }
+  // prepare a temp data.json file with absolute paths
+  before(function (done) {
 
+    // set all the relative paths in data to absolute paths
+    data.forEach(function (field) {
+      if (field.path) {
+        field.path = getAssetPath(field.path);
+      }
+    });
+
+    // write this to a temp file
+    tmp.fileAsync('tepez-pdf-tools-test').spread(function (path, fd, cleanupCallback) {
+      dataPath = path;
+      dataFd = fd;
+      fs.writeSync(fd, JSON.stringify(data));
+      fs.closeSync(fd);
+    }).delay(1000).then(done);
+
+  });
 
   // read all the assets once on startup
   before(function(done) {
@@ -61,185 +86,147 @@ describe('tepez-pdf-tools', function() {
       filledSigned: fs.readFileAsync(getAssetPath('expected/filledSigned.pdf')),
       filledFont: fs.readFileAsync(getAssetPath('expected/filledFont.pdf')),
       filledFontSigned: fs.readFileAsync(getAssetPath('expected/filledFontSigned.pdf')),
-
       filledPathfont: fs.readFileAsync(getAssetPath('expected/filledPathfont.pdf'))
     }).then(function (_assets) {
       assets = _assets;
     }).then(done);
   });
 
-  beforeEach(function() {
-    resBuffers = [];
-  });
+  var specs = [
+    {
+      desc: 'should use sourceContent as content of source',
+      options: function () { return {
+        sourceContent: assets.src
+      }; },
+      expected: 'empty'
+    },
+    {
+      desc: 'should use sourcePath as path of source file',
+      options: function () { return {
+        sourcePath: getAssetPath('src.pdf')
+      }; },
+      expected: 'empty'
+    },
 
-  describe('when sourcePath and sourceContent are given', function () {
-    it('should throw an error', function () {
-      expect(function() {
-        pdfTools({ sourcePath: getAssetPath('src.pdf'), sourceContent: assets.src });
-      }).to.throw(Error, 'value contains a conflict between exclusive peers sourcePath, sourceContent');
-    });
-  });
-
-  describe('sourcePath option', function () {
-    it('should use this file as the source', function (done) {
-      stdout = pdfTools({ sourcePath: getAssetPath('src.pdf') }, function (err) {
-        var res = Buffer.concat(resBuffers);
-        expect(err).to.equal(null);
-
-        testPdfMatch(res, 'empty');
-
-        done()
-      });
-      accumulateResult();
-    });
-  });
-
-  describe('sourceContent option', function () {
-    it('should use it as the source', function (done) {
-      stdout = pdfTools({ sourceContent: assets.src }, function (err) {
-        var res = Buffer.concat(resBuffers);
-        expect(err).to.equal(null);
-
-        testPdfMatch(res, 'empty');
-
-        done()
-      });
-      accumulateResult();
-    });
-  });
-
-  describe('cert option', function () {
-
-    it('should digitally sign the file with the given certificate', function (done) {
-      stdout = pdfTools({
-          sourceContent: assets.src,
-          cert: getAssetPath('certificate.pfx'),
-          certpass: 'password',
-          certformat: 'pkcs12'
-      }, function (err) {
-        var res = Buffer.concat(resBuffers);
-        expect(err).to.equal(null);
-        testPdfMatch(res, 'emptySigned');
-        done()
-      });
-      accumulateResult();
-    });
-
-    it('certformat should default to pkcs12', function (done) {
-      stdout = pdfTools({
+    {
+      desc: 'should digitally sign file with certificate at cert',
+      options: function () { return {
+        sourceContent: assets.src,
+        cert: getAssetPath('certificate.pfx'),
+        certpass: 'password',
+        certformat: 'pkcs12'
+      }; },
+      expected: 'emptySigned'
+    },
+    {
+      desc: 'certformat should default to pkcs12',
+      options: function () { return {
         sourceContent: assets.src,
         cert: getAssetPath('certificate.pfx'),
         certpass: 'password'
-      }, function (err) {
-        var res = Buffer.concat(resBuffers);
-        expect(err).to.equal(null);
-        testPdfMatch(res, 'emptySigned');
-        done()
-      });
-      accumulateResult();
-    })
+      }; },
+      expected: 'emptySigned'
+    },
 
-
-  });
-
-
-
-  describe ('data option', function () {
-
-    it ('should use data in given path to populate the form', function (done) {
-      stdout = pdfTools({
+    {
+      desc: 'should fill form with data in data',
+      options: function () { return {
         sourceContent: assets.src,
-        data: getAssetPath('data.json'),
+        data: dataPath,
         // we must set CWD to the assets dir because the `data.json` file uses
         // partial paths
         spawnOptions: { cwd: path.join(__dirname, 'assets') }
-      }, function (err) {
-        var res = Buffer.concat(resBuffers);
-        expect(err).to.equal(null);
-        testPdfMatch(res, 'filled');
-        done()
-      });
-      accumulateResult();
-    });
+      }; },
+      expected: 'filled'
+    },
 
-
-    it ('should use data in given path to populate the form (sigend)', function (done) {
-      stdout = pdfTools({
+    {
+      desc: 'should fill form with data in data (signed)',
+      options: function () { return {
         sourceContent: assets.src,
-        data: getAssetPath('data.json'),
+        data: dataPath,
         cert: getAssetPath('certificate.pfx'),
         certpass: 'password',
         // we must set CWD to the assets dir because the `data.json` file uses
         // partial paths
         spawnOptions: { cwd: path.join(__dirname, 'assets') }
-      }, function (err) {
-        var res = Buffer.concat(resBuffers);
-        expect(err).to.equal(null);
-        testPdfMatch(res, 'filledSigned');
-        done()
-      });
-      accumulateResult();
-    });
+      }; },
+      expected: 'filledSigned'
+    },
 
-  });
-
-  describe('when font is a path', function () {
-
-    it ('should font in this path', function (done) {
-      stdout = pdfTools({
+    {
+      desc: 'should use font as path for substitution font',
+      options: function () { return {
         sourceContent: assets.src,
-        data: getAssetPath('data.json'),
+        data: dataPath,
         // font dowloaded from http://www.cunliffethompson.com/font/download.html
         font: getAssetPath('shuneet_03_book_v21.OTF'),
         spawnOptions: { cwd: path.join(__dirname, 'assets') }
-      }, function (err) {
-        var res = Buffer.concat(resBuffers);
-        expect(err).to.equal(null);
-        testPdfMatch(res, 'filledPathfont');
-        done()
-      });
-      accumulateResult();
-    });
+      }; },
+      expected: 'filledPathfont'
+    },
 
-  });
-
-  describe('when font is arialuni.ttf', function () {
-    it ('should arialuni.ttf embedded in jar', function (done) {
-      stdout = pdfTools({
+    {
+      desc: 'when font is arialuni.ttf, should use arialuni.ttf embedded in jar',
+      options: function () { return {
         sourceContent: assets.src,
-        data: getAssetPath('data.json'),
+        data: dataPath,
         font: 'arialuni.ttf',
         spawnOptions: { cwd: path.join(__dirname, 'assets') }
-      }, function (err) {
-        var res = Buffer.concat(resBuffers);
-        expect(err).to.equal(null);
-        testPdfMatch(res, 'filledFont');
-        done()
-      });
-      accumulateResult();
-    });
+      }; },
+      expected: 'filledFont'
+    },
 
-
-    it ('should arialuni.ttf embedded in jar (signed)', function (done) {
-      stdout = pdfTools({
+    {
+      desc: 'when font is arialuni.ttf, should use arialuni.ttf embedded in jar (signed)',
+      options: function () { return {
         sourceContent: assets.src,
-        data: getAssetPath('data.json'),
+        data: dataPath,
         font: 'arialuni.ttf',
         cert: getAssetPath('certificate.pfx'),
         certpass: 'password',
         spawnOptions: { cwd: path.join(__dirname, 'assets') }
-      }, function (err) {
+      }; },
+      expected: 'filledFontSigned'
+    }
+
+  ];
+
+  specs.forEach(function(spec, specIdx) {
+
+    it(spec.desc + ' (spec ' + specIdx + ')', function (done) {
+
+      var resBuffers = [];
+
+      var pdfToolsOptions = spec.options.call(this);
+
+      var stdout = pdfTools(pdfToolsOptions, function (err) {
         var res = Buffer.concat(resBuffers);
         expect(err).to.equal(null);
-        testPdfMatch(res, 'filledFontSigned');
+
+        var expected = assets[spec.expected];
+        expect(res.length).to.equal(expected.length);
+        var matchRate = getMatchRate(res, expected);
+
+        if (matchRate <= 0.99) {
+          var resPath = getAssetPath('result/' + spec.expected + '.pdf');
+          fs.writeFileSync(resPath, res);
+          console.log('Check out ' + resPath + ' to figure out what is wrong with it');
+        }
+
+        expect(matchRate).to.be.greaterThan(0.99);
+
         done()
       });
-      accumulateResult();
+
+      stdout.on('data',function(buffer){
+        resBuffers.push(buffer);
+      });
+
+
     });
 
-  })
-
-
+  });
 
 
 });
