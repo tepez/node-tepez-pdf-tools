@@ -7,6 +7,8 @@ Borrows a-lot from [node-wkhtmltopdf](https://github.com/devongovett/node-wkhtml
 
 ## Usage
 
+If `tepez-pdf-tools.jar` is not in the working directory of the script, than `TP_PDF_TOOLS_JAR` must point to it. 
+
 ```javascript
 var PdfTools = require('tepez-pdf-tools');
 
@@ -24,8 +26,6 @@ var stream = PdfTools({ sourceContent: "%PDF-1.5..." }, function(err) {
     // user `stream`
   }
 );
-
-`pdfTools.command` defaults to `'java -jar tepez-pdf-tools.jar'`, but it must point to the location where the JAR is.
 
 ```
 

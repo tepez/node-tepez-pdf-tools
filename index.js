@@ -1,5 +1,5 @@
-var spawn = require('child_process').spawn;
-var Joi = require('joi');
+var spawn = require('child_process').spawn,
+  Joi = require('joi');
 
 function quote(val) {
   // escape and quote the value if it is a string and this isn't windows
@@ -9,17 +9,19 @@ function quote(val) {
   return val;
 }
 
-function pdfTools(input, options, callback) {
+function pdfTools(options, callback) {
 
   Joi.assert(callback, Joi.func());
   Joi.assert(options, Joi.object().keys({
       sourcePath: Joi.string().description('path to the source file'),
-      sourceContent: Joi.string().description('the content of the source file'),
+      sourceContent: Joi.any().description('the content of the source file'),
       destinationPath: Joi.string().description('path to the destination file'),
       font: Joi.string(),
       cert: Joi.string(),
       certpass: Joi.string(),
-      certformat: Joi.string()
+      certformat: Joi.string(),
+      data: Joi.string(),
+      spawnOptions: Joi.object().description('options for the spawn command')
   })
 
     .xor('sourcePath', 'sourceContent')
@@ -30,9 +32,11 @@ function pdfTools(input, options, callback) {
 
   );
 
-  var args = [pdfTools.command, '--quiet', '--destination', '-'];
+  var jarPath = process.env.TP_PDF_TOOLS_JAR || 'tepez-pdf-tools.jar';
 
-  [ 'font', 'cert', 'certpass', 'certformat' ].forEach(function(key) {
+  var args = ['java', '-jar', quote(jarPath), '--quite', '--destination', '-'];
+
+  [ 'font', 'cert', 'certpass', 'certformat', 'data' ].forEach(function(key) {
     var val = options[key];
     if (val) {
       args.push('--' + key);
@@ -47,13 +51,14 @@ function pdfTools(input, options, callback) {
     args.push(quote(options.sourcePath));
   }
 
+  var child;
   if (process.platform === 'win32') {
-    var child = spawn(args[0], args.slice(1));
+    child = spawn(args[0], args.slice(1), options.spawnOptions);
   } else {
     // this nasty business prevents piping problems on linux
-    var child = spawn('/bin/sh', ['-c', args.join(' ') + ' | cat']);
+    child = spawn('/bin/sh', ['-c', args.join(' ') + ' | cat'], options.spawnOptions);
   }
-  
+
   // call the callback with null error when the process exits successfully
   if (callback)
     child.on('exit', function() { callback(null); });
@@ -87,5 +92,4 @@ function pdfTools(input, options, callback) {
   return stream;
 }
 
-pdfTools.command = 'java -jar tepez-pdf-tools.jar';
 module.exports = pdfTools;
