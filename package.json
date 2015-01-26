@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/tepez/node-tepez-pdf-tools",
   "dependencies": {
+    "bluebird": "^2.9.2",
     "joi": "^5.1.0"
   },
   "devDependencies": {

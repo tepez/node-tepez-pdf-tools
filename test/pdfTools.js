@@ -13,7 +13,7 @@ function getAssetPath(asset) {
 
 // since there are some minor changes between the expected PDF files and the files we
 // generate at test time, we just make sure that X percent of them is the same
-function matchRate(buffer1, buffer2) {
+function getMatchRate(buffer1, buffer2) {
   var matches = 0;
   for (var i = 0; i < Math.min(buffer1.length, buffer2.length); i++) {
     if (buffer1[i] === buffer2[i]) {
@@ -22,6 +22,7 @@ function matchRate(buffer1, buffer2) {
   }
   return matches / Math.max(buffer1.length, buffer2.length)
 }
+
 
 
 describe('tepez-pdf-tools', function() {
@@ -34,18 +35,34 @@ describe('tepez-pdf-tools', function() {
     });
   }
 
+  function testPdfMatch(res, name) {
+    expected = assets[name];
+    expect(res.length).to.equal(expected.length);
+    var matchRate = getMatchRate(res, expected);
+
+    if (matchRate <= 0.99) {
+      var resPath = getAssetPath('result/' + name + '.pdf');
+      fs.writeFileSync(resPath, res);
+      console.log('Check out ' + resPath + ' to figure out what is wrong with it');
+    }
+
+    expect(matchRate).to.be.greaterThan(0.99);
+
+  }
+
+
   // read all the assets once on startup
   before(function(done) {
     bluedbird.props({
       src: fs.readFileAsync(getAssetPath('src.pdf')),
       empty: fs.readFileAsync(getAssetPath('expected/empty.pdf')),
-      emptySigned: fs.readFileAsync(getAssetPath('expected/empty_signed.pdf')),
+      emptySigned: fs.readFileAsync(getAssetPath('expected/emptySigned.pdf')),
       filled: fs.readFileAsync(getAssetPath('expected/filled.pdf')),
-      filledSigned: fs.readFileAsync(getAssetPath('expected/filled_signed.pdf')),
-      filledFont: fs.readFileAsync(getAssetPath('expected/filled_font.pdf')),
-      filledFontSigned: fs.readFileAsync(getAssetPath('expected/filled_font_signed.pdf')),
+      filledSigned: fs.readFileAsync(getAssetPath('expected/filledSigned.pdf')),
+      filledFont: fs.readFileAsync(getAssetPath('expected/filledFont.pdf')),
+      filledFontSigned: fs.readFileAsync(getAssetPath('expected/filledFontSigned.pdf')),
 
-      filledPathfont: fs.readFileAsync(getAssetPath('expected/filled_fontpath.pdf'))
+      filledPathfont: fs.readFileAsync(getAssetPath('expected/filledPathfont.pdf'))
     }).then(function (_assets) {
       assets = _assets;
     }).then(done);
@@ -69,8 +86,7 @@ describe('tepez-pdf-tools', function() {
         var res = Buffer.concat(resBuffers);
         expect(err).to.equal(null);
 
-        expect(res.length).to.equal(assets.empty.length);
-        expect(matchRate(res, assets.empty)).to.be.greaterThan(0.99);
+        testPdfMatch(res, 'empty');
 
         done()
       });
@@ -83,8 +99,8 @@ describe('tepez-pdf-tools', function() {
       stdout = pdfTools({ sourceContent: assets.src }, function (err) {
         var res = Buffer.concat(resBuffers);
         expect(err).to.equal(null);
-        expect(res.length).to.equal(assets.empty.length);
-        expect(matchRate(res, assets.empty)).to.be.greaterThan(0.99);
+
+        testPdfMatch(res, 'empty');
 
         done()
       });
@@ -103,8 +119,7 @@ describe('tepez-pdf-tools', function() {
       }, function (err) {
         var res = Buffer.concat(resBuffers);
         expect(err).to.equal(null);
-        expect(res.length).to.equal(assets.emptySigned.length);
-        expect(matchRate(res, assets.emptySigned)).to.be.greaterThan(0.99);
+        testPdfMatch(res, 'emptySigned');
         done()
       });
       accumulateResult();
@@ -118,8 +133,7 @@ describe('tepez-pdf-tools', function() {
       }, function (err) {
         var res = Buffer.concat(resBuffers);
         expect(err).to.equal(null);
-        expect(res.length).to.equal(assets.emptySigned.length);
-        expect(matchRate(res, assets.emptySigned)).to.be.greaterThan(0.99);
+        testPdfMatch(res, 'emptySigned');
         done()
       });
       accumulateResult();
@@ -142,8 +156,7 @@ describe('tepez-pdf-tools', function() {
       }, function (err) {
         var res = Buffer.concat(resBuffers);
         expect(err).to.equal(null);
-        expect(res.length).to.equal(assets.filled.length);
-        expect(matchRate(res, assets.filled)).to.be.greaterThan(0.99);
+        testPdfMatch(res, 'filled');
         done()
       });
       accumulateResult();
@@ -162,8 +175,7 @@ describe('tepez-pdf-tools', function() {
       }, function (err) {
         var res = Buffer.concat(resBuffers);
         expect(err).to.equal(null);
-        expect(res.length).to.equal(assets.filledSigned.length);
-        expect(matchRate(res, assets.filledSigned)).to.be.greaterThan(0.99);
+        testPdfMatch(res, 'filledSigned');
         done()
       });
       accumulateResult();
@@ -183,8 +195,7 @@ describe('tepez-pdf-tools', function() {
       }, function (err) {
         var res = Buffer.concat(resBuffers);
         expect(err).to.equal(null);
-        expect(res.length).to.equal(assets.filledPathfont.length);
-        expect(matchRate(res, assets.filledPathfont)).to.be.greaterThan(0.99);
+        testPdfMatch(res, 'filledPathfont');
         done()
       });
       accumulateResult();
@@ -202,8 +213,7 @@ describe('tepez-pdf-tools', function() {
       }, function (err) {
         var res = Buffer.concat(resBuffers);
         expect(err).to.equal(null);
-        expect(res.length).to.equal(assets.filledFont.length);
-        expect(matchRate(res, assets.filledFont)).to.be.greaterThan(0.99);
+        testPdfMatch(res, 'filledFont');
         done()
       });
       accumulateResult();
@@ -221,8 +231,7 @@ describe('tepez-pdf-tools', function() {
       }, function (err) {
         var res = Buffer.concat(resBuffers);
         expect(err).to.equal(null);
-        expect(res.length).to.equal(assets.filledFontSigned.length);
-        expect(matchRate(res, assets.filledFontSigned)).to.be.greaterThan(0.99);
+        testPdfMatch(res, 'filledFontSigned');
         done()
       });
       accumulateResult();

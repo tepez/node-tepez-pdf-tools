@@ -1,2 +1,5 @@
 node_modules/
 .idea/
+
+# filed created during testing
+test/assets/result/
