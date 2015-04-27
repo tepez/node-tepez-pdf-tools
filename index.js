@@ -16,7 +16,6 @@ function pdfTools(options, callback) {
     nailgun: Joi.bool().description('use nailgun'),
     sourcePath: Joi.string().description('path to the source file'),
     sourceContent: Joi.any().description('the content of the source file'),
-    destinationPath: Joi.string().description('path to the destination file'),
     font: Joi.string(),
     cert: Joi.string(),
     certpass: Joi.string(),
