@@ -50,7 +50,7 @@ function pdfTools(options, callback) {
 
 //  console.log(args);
 
-  args.push('--quite', '--destination', '-');
+  args.push('--destination', '-');
 
   [ 'font', 'cert', 'certpass', 'certformat', 'data' ].forEach(function(key) {
     var val = options[key];
