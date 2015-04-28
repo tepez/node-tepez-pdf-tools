@@ -8,6 +8,8 @@ var expect = require('chai').expect,
   Mkdirp = require('mkdirp'),
   _ = require('lodash');
 
+// Set to true to create the result of every test, to manually check the result files
+var alwaysWriteResults = false;
 
 Bluebird.promisifyAll(Fs);
 Bluebird.promisifyAll(Tmp);
@@ -49,7 +51,7 @@ describe('tepez-pdf-tools', function() {
 
   // remove the "result" directory
   before(function(done) {
-    var resultDirPath = getAssetPath('result');
+    var resultDirPath = Path.join(__dirname, 'results');
     RimrafAsync(resultDirPath).then(function () {
       return MkdirpAsync(resultDirPath);
     }).return().then(done);
@@ -479,9 +481,7 @@ describe('tepez-pdf-tools', function() {
         var res = Buffer.concat(resBuffers);
         expect(err).to.equal(null);
 
-        var resPath = getAssetPath(
-          'result/' + spec.name + (useNailgun ? '-nailgun' : '') + '.pdf'
-        );
+        var resPath = Path.join(__dirname, 'results', spec.name + (useNailgun ? '-nailgun' : '') + '.pdf');
 
         if (spec.expected) {
 
@@ -497,6 +497,8 @@ describe('tepez-pdf-tools', function() {
           if (matchRate <= expectedMatchRate) {
             Fs.writeFileSync(resPath, res);
             console.log('Check out ' + resPath + ' to figure out what is wrong with it');
+          } else if (alwaysWriteResults) {
+            Fs.writeFileSync(resPath, res);
           }
 
           // it's important not to do the expectations before, because that would raise an
