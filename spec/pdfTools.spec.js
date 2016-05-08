@@ -16,7 +16,7 @@ const alwaysWriteResults = false;
 const RimrafAsync = Bluebird.promisify(Rimraf);
 const MkdirpAsync = Bluebird.promisify(Mkdirp);
 Bluebird.promisifyAll(Fs);
-Bluebird.promisifyAll(Tmp);
+Bluebird.promisifyAll(Tmp,{multiArgs: true});
 
 // return the absolute path of an asset
 function getAssetPath(asset) {
