@@ -1,16 +1,18 @@
-var spawn = require('child_process').spawn,
-  Joi = require('joi');
+'use strict';
+
+const spawn = require('child_process').spawn;
+const Joi = require('joi');
+
 
 function quote(val) {
   // escape and quote the value if it is a string and this isn't windows
-  if (typeof val === 'string' && process.platform !== 'win32')
+  if (typeof val === 'string' && process.platform !== 'win32') {
     val = '"' + val.replace(/(["\\$`])/g, '\\$1') + '"';
-    
+  }
   return val;
 }
 
 function pdfTools(options, callback) {
-
   Joi.assert(callback, Joi.func());
   Joi.assert(options, Joi.object().keys({
     nailgun: Joi.bool().description('use nailgun'),
@@ -22,38 +24,32 @@ function pdfTools(options, callback) {
     certformat: Joi.string(),
     data: Joi.string(),
     spawnOptions: Joi.object().description('options for the spawn command')
-  })
-
-    .xor('sourcePath', 'sourceContent')
-
+  }).xor('sourcePath', 'sourceContent')
     // if certpass or certformat is given than require cert
     .with('certpass', 'cert')
     .with('certformat', 'cert')
-
   );
 
-  if (options.nailgun == null) {
+  if (typeof options.nailgun === 'undefined') {
     options.nailgun = true;
   }
 
-  var args = [];
+  const args = [];
 
   // either use nailgun client or the JAR directly
   if (options.nailgun) {
-    var ngPath = process.env.TP_PDF_TOOLS_NG_PATH ? quote(process.env.TP_PDF_TOOLS_NG_PATH) : 'ng';
+    const ngPath = process.env.TP_PDF_TOOLS_NG_PATH ? quote(process.env.TP_PDF_TOOLS_NG_PATH) : 'ng';
     args.push(ngPath, 'pdfTools.Main');
 
   } else {
-    var jarPath = process.env.TP_PDF_TOOLS_JAR_PATH ? quote(process.env.TP_PDF_TOOLS_JAR_PATH) : 'tepez-pdf-tools.jar';
+    const jarPath = process.env.TP_PDF_TOOLS_JAR_PATH ? quote(process.env.TP_PDF_TOOLS_JAR_PATH) : 'tepez-pdf-tools.jar';
     args.push('java', '-jar', jarPath);
   }
 
-//  console.log(args);
-
   args.push('--destination', '-');
 
-  [ 'font', 'cert', 'certpass', 'certformat', 'data' ].forEach(function(key) {
-    var val = options[key];
+  [ 'font', 'cert', 'certpass', 'certformat', 'data' ].forEach((key) => {
+    const val = options[key];
     if (val) {
       args.push('--' + key);
       args.push(quote(val));
@@ -67,9 +63,7 @@ function pdfTools(options, callback) {
     args.push(quote(options.sourcePath));
   }
 
-//  console.log(args);
-
-  var child;
+  let child;
   if (process.platform === 'win32') {
     child = spawn(args[0], args.slice(1), options.spawnOptions);
   } else {
@@ -78,26 +72,29 @@ function pdfTools(options, callback) {
   }
 
   // call the callback with null error when the process exits successfully
-  if (callback)
-    child.on('exit', function() { callback(null); });
-    
+  if (callback) {
+    child.on('exit', () => { callback(null); });
+  }
+
   // setup error handling
-  var stream = child.stdout;
+  const stream = child.stdout;
   function handleError(err) {
     child.removeAllListeners('exit');
     child.kill();
     
     // call the callback if there is one
-    if (callback)
+    if (callback) {
       callback(err);
-      
+    }
+
     // if not, or there are listeners for errors, emit the error event
-    if (!callback || stream.listeners('error').length > 0)
+    if (!callback || stream.listeners('error').length > 0) {
       stream.emit('error', err);
+    }
   }
   
   child.once('error', handleError);
-  child.stderr.once('data', function(err) {
+  child.stderr.once('data', (err) => {
     handleError(new Error((err || '').toString().trim()));
   });
   

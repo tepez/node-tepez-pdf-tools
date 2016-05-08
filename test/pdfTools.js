@@ -1,20 +1,23 @@
-var expect = require('chai').expect,
-  pdfTools = require('..'),
-  Path = require('path'),
-  Fs = require('fs'),
-  Bluebird = require('bluebird'),
-  Tmp = require('tmp'),
-  Rimraf = require('rimraf'),
-  Mkdirp = require('mkdirp'),
-  _ = require('lodash');
+'use strict';
+
+const expect = require('chai').expect;
+const pdfTools = require('..');
+const Path = require('path');
+const Fs = require('fs');
+const Bluebird = require('bluebird');
+const Tmp = require('tmp');
+const Rimraf = require('rimraf');
+const Mkdirp = require('mkdirp');
+const _ = require('lodash');
+
 
 // Set to true to create the result of every test, to manually check the result files
-var alwaysWriteResults = false;
+const alwaysWriteResults = false;
 
+const RimrafAsync = Bluebird.promisify(Rimraf);
+const MkdirpAsync = Bluebird.promisify(Mkdirp);
 Bluebird.promisifyAll(Fs);
 Bluebird.promisifyAll(Tmp);
-var RimrafAsync = Bluebird.promisify(Rimraf),
-  MkdirpAsync = Bluebird.promisify(Mkdirp);
 
 // return the absolute path of an asset
 function getAssetPath(asset) {
@@ -24,8 +27,8 @@ function getAssetPath(asset) {
 // since there are some minor changes between the expected PDF files and the files we
 // generate at test time, we just make sure that X percent of them is the same
 function getMatchRate(buffer1, buffer2) {
-  var matches = 0;
-  for (var i = 0; i < Math.min(buffer1.length, buffer2.length); i++) {
+  let matches = 0;
+  for (let i = 0; i < Math.min(buffer1.length, buffer2.length); i++) {
     if (buffer1[i] === buffer2[i]) {
       matches += 1;
     }
@@ -35,7 +38,7 @@ function getMatchRate(buffer1, buffer2) {
 
 function readDirectory(dir) {
   return Fs.readdirAsync(getAssetPath(dir)).then(function(fileNames) {
-    var files = {};
+    const files = {};
     _.forEach(fileNames, function(fileName) {
       files[Path.basename(fileName, Path.extname(fileName))] =
         Fs.readFileAsync(getAssetPath(Path.join(dir, fileName)));
@@ -47,11 +50,11 @@ function readDirectory(dir) {
 
 describe('tepez-pdf-tools', function() {
 
-  var sourceFiles, expectedFiles, imageFiles;
+  let sourceFiles, expectedFiles, imageFiles;
 
   // remove the "result" directory
   before(function(done) {
-    var resultDirPath = Path.join(__dirname, 'results');
+    const resultDirPath = Path.join(__dirname, 'results');
     RimrafAsync(resultDirPath).then(function () {
       return MkdirpAsync(resultDirPath);
     }).return().then(done);
@@ -109,8 +112,7 @@ describe('tepez-pdf-tools', function() {
   });
 
 
-  var specs = [
-
+  const specs = [
     {
       name: 'sourcePath',
       expected: 'textValid',
@@ -124,7 +126,6 @@ describe('tepez-pdf-tools', function() {
         sourcePath: getAssetPath('src/text.pdf')
       }; }
     },
-
     {
       name: 'textValid',
       expected: 'textValid',
@@ -174,7 +175,6 @@ describe('tepez-pdf-tools', function() {
         sourceContent: sourceFiles.text
       }; }
     },
-
     {
       name: 'checkboxChecked',
       expected: 'checkboxChecked',
@@ -225,7 +225,6 @@ describe('tepez-pdf-tools', function() {
         sourceContent: sourceFiles.checkbox
       }; }
     },
-
     {
       name: 'imagePath',
       expected: 'imagePath',
@@ -329,7 +328,6 @@ describe('tepez-pdf-tools', function() {
         }
       ]
     },
-
     {
       name: 'attachmentContent',
       expected: 'attachmentContent',
@@ -386,7 +384,6 @@ describe('tepez-pdf-tools', function() {
         desc: 'mock file description'
       } ]; }
     },
-
     {
       name: 'signed',
       expected: 'signed',
@@ -418,8 +415,6 @@ describe('tepez-pdf-tools', function() {
         { type: 'text', key:'field2', value: 'value 2' }
       ]
     },
-
-
     {
       name: 'fontPath',
       expected: 'fontPath',
@@ -436,7 +431,6 @@ describe('tepez-pdf-tools', function() {
         { type: 'text', key:'field2', value: 'ידה ידה ידה' }
       ]
     },
-
     {
       name: 'fontEmbedded',
       expected: 'fontEmbedded',
@@ -452,43 +446,41 @@ describe('tepez-pdf-tools', function() {
         { type: 'text', key:'field2', value: 'ידה ידה ידה' }
       ]
     }
-
   ];
 
-  specs.forEach(function(spec, specIdx) {
-
-    var dataFilePath;
+  specs.forEach(function(specOpts, specIdx) {
+    let dataFilePath;
 
     function test(useNailgun, done) {
 
       // we need the context so we can skip a test if it was not really carried out
-      var context = this;
+      const context = this;
 
-      var resBuffers = [];
+      const resBuffers = [];
 
-      var pdfToolsOptions = {
+      const pdfToolsOptions = {
         data: dataFilePath,
         nailgun: useNailgun
       };
 
-      if (spec.options) {
-        _.assign(pdfToolsOptions, spec.options.call(this));
+      if (specOpts.options) {
+        _.assign(pdfToolsOptions, specOpts.options.call(this));
       }
 
-      var expectedMatchRate = spec.expectedMatchRate || 0.99;
+      const expectedMatchRate = specOpts.expectedMatchRate || 0.99;
 
-      var stdout = pdfTools(pdfToolsOptions, function (err) {
-        var res = Buffer.concat(resBuffers);
+      const stdout = pdfTools(pdfToolsOptions, function (err) {
+        const res = Buffer.concat(resBuffers);
         expect(err).to.equal(null);
 
-        var resPath = Path.join(__dirname, 'results', spec.name + (useNailgun ? '-nailgun' : '') + '.pdf');
+        const resPath = Path.join(__dirname, 'results', specOpts.name + (useNailgun ? '-nailgun' : '') + '.pdf');
 
-        if (spec.expected) {
+        if (specOpts.expected) {
 
-          var expected = expectedFiles[spec.expected];
+          const expected = expectedFiles[specOpts.expected];
 
           // check how much the expected and the result files are common
-          var matchRate = getMatchRate(res, expected);
+          const matchRate = getMatchRate(res, expected);
 
           //console.log(matchRate);
 
@@ -526,18 +518,15 @@ describe('tepez-pdf-tools', function() {
       });
     }
 
-    describe(spec.desc + ' (spec ' + specIdx + ')', function () {
-
+    describe(specOpts.desc + ' (spec ' + specIdx + ')', function () {
       // Create a temporary file with the field data
       beforeEach(function (done) {
-
-        var data = spec.data;
-        if (_.isFunction(spec.data)) {
-          data = spec.data.call(this);
+        let data = specOpts.data;
+        if (_.isFunction(specOpts.data)) {
+          data = specOpts.data.call(this);
         }
 
-
-        Tmp.fileAsync('tepez-pdf-tools-test').spread(function (path, fd) {
+        Tmp.fileAsync('tepez-pdf-tools-test').spread((path, fd) => {
           dataFilePath = path;
           Fs.writeSync(fd, JSON.stringify(data));
           Fs.closeSync(fd);
@@ -551,10 +540,6 @@ describe('tepez-pdf-tools', function() {
       it('using nailgun', function (done) {
         test.call(this, true, done);
       });
-
     });
-
   });
-
-
 });
