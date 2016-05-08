@@ -1,6 +1,5 @@
 'use strict';
 
-const expect = require('chai').expect;
 const pdfTools = require('..');
 const Path = require('path');
 const Fs = require('fs');
@@ -53,7 +52,7 @@ describe('tepez-pdf-tools', function() {
   let sourceFiles, expectedFiles, imageFiles;
 
   // remove the "result" directory
-  before(function(done) {
+  beforeAll(function(done) {
     const resultDirPath = Path.join(__dirname, 'results');
     RimrafAsync(resultDirPath).then(function () {
       return MkdirpAsync(resultDirPath);
@@ -61,21 +60,21 @@ describe('tepez-pdf-tools', function() {
   });
 
   // read source files
-  before(function(done) {
+  beforeAll(function(done) {
     readDirectory('src').then(function(files) {
       sourceFiles = files;
     }).then(done);
   });
 
   // read expected files
-  before(function(done) {
+  beforeAll(function(done) {
     readDirectory('expected').then(function(files) {
       expectedFiles = files;
     }).then(done);
   });
 
   // read image files
-  before(function(done) {
+  beforeAll(function(done) {
     readDirectory('img').then(function(files) {
       // encode each image as base64
       _.forEach(files, function(contet, key) {
@@ -90,7 +89,7 @@ describe('tepez-pdf-tools', function() {
       it('should throw an error', function () {
         expect(function() {
           pdfTools({ sourcePath: getAssetPath('src.pdf'), sourceContent: sourceFiles.blank });
-        }).to.throw(Error, '"value" contains a conflict between exclusive peers [sourcePath, sourceContent]');
+        }).toThrowError(Error, /"value" contains a conflict between exclusive peers \[sourcePath, sourceContent]/);
       });
     });
 
@@ -98,7 +97,7 @@ describe('tepez-pdf-tools', function() {
       it('should throw an error', function () {
         expect(function() {
           pdfTools({ sourceContent: sourceFiles.blank, certpass: 'password' });
-        }).to.throw(Error);
+        }).toThrowError(Error);
       });
     });
 
@@ -106,7 +105,7 @@ describe('tepez-pdf-tools', function() {
       it('should throw an error', function () {
         expect(function() {
           pdfTools({ sourceContent: sourceFiles.blank, certformat: 'pkcs12' });
-        }).to.throw(Error);
+        }).toThrowError(Error);
       });
     });
   });
@@ -449,17 +448,13 @@ describe('tepez-pdf-tools', function() {
   ];
 
   specs.forEach(function(specOpts, specIdx) {
-    let dataFilePath;
+    let spec;
 
-    function test(useNailgun, done) {
-
-      // we need the context so we can skip a test if it was not really carried out
-      const context = this;
-
+    function runTest(useNailgun, done) {
       const resBuffers = [];
 
       const pdfToolsOptions = {
-        data: dataFilePath,
+        data: spec.dataFilePath,
         nailgun: useNailgun
       };
 
@@ -471,7 +466,7 @@ describe('tepez-pdf-tools', function() {
 
       const stdout = pdfTools(pdfToolsOptions, function (err) {
         const res = Buffer.concat(resBuffers);
-        expect(err).to.equal(null);
+        expect(err).toBe(null);
 
         const resPath = Path.join(__dirname, 'results', specOpts.name + (useNailgun ? '-nailgun' : '') + '.pdf');
 
@@ -488,26 +483,19 @@ describe('tepez-pdf-tools', function() {
           // write the file that we got so we can inspect it
           if (matchRate <= expectedMatchRate) {
             Fs.writeFileSync(resPath, res);
-            console.log('Check out ' + resPath + ' to figure out what is wrong with it');
+            console.log(`Check out ${resPath} to figure out what is wrong with it`);
           } else if (alwaysWriteResults) {
             Fs.writeFileSync(resPath, res);
           }
 
           // it's important not to do the expectations before, because that would raise an
           // error and we won't have the pdf file in the result dir to inspect
-          expect(res.length).to.equal(expected.length);
-          expect(matchRate).to.be.greaterThan(expectedMatchRate);
+          expect(res.length).toBe(expected.length);
+          expect(matchRate).toBeGreaterThan(expectedMatchRate);
 
         } else {
-
           Fs.writeFileSync(resPath, res);
-          console.log(resPath + ' created. Add it to expected files if it it OK');
-
-          // can't use skip in async specs
-          // https://github.com/mochajs/mocha/pull/1618
-          // context.skip('dfgdfg');
-
-
+          console.log(`${resPath} created. Add it to expected files if it it OK`);
         }
 
         done()
@@ -518,27 +506,28 @@ describe('tepez-pdf-tools', function() {
       });
     }
 
-    describe(specOpts.desc + ' (spec ' + specIdx + ')', function () {
+    describe(`${specOpts.desc} (spec ${specIdx} )`, function () {
       // Create a temporary file with the field data
       beforeEach(function (done) {
+        spec = this;
         let data = specOpts.data;
         if (_.isFunction(specOpts.data)) {
           data = specOpts.data.call(this);
         }
 
         Tmp.fileAsync('tepez-pdf-tools-test').spread((path, fd) => {
-          dataFilePath = path;
+          spec.dataFilePath = path;
           Fs.writeSync(fd, JSON.stringify(data));
           Fs.closeSync(fd);
         }).delay(1000).then(done);
       });
 
       it('normal execution', function (done) {
-        test.call(this, false, done);
+        runTest(false, done);
       });
 
       it('using nailgun', function (done) {
-        test.call(this, true, done);
+        runTest(true, done);
       });
     });
   });
