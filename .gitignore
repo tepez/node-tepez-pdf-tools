@@ -3,3 +3,5 @@ node_modules/
 
 # filed created during testing
 spec/results/
+
+tepez-pdf-tools.log

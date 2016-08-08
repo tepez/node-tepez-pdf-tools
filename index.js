@@ -2,6 +2,7 @@
 
 const spawn = require('child_process').spawn;
 const Joi = require('joi');
+const _ = require('lodash');
 
 
 function quote(val) {
@@ -23,7 +24,9 @@ function pdfTools(options, callback) {
     certpass: Joi.string(),
     certformat: Joi.string(),
     data: Joi.string(),
-    spawnOptions: Joi.object().description('options for the spawn command')
+    spawnOptions: Joi.object().description('options for the spawn command'),
+    logFile: Joi.string(),
+    logLevel: Joi.string().only('SEVERE', 'WARNING', 'INFO', 'CONFIG', 'FINE', 'FINER', 'FINEST')
   }).xor('sourcePath', 'sourceContent')
     // if certpass or certformat is given than require cert
     .with('certpass', 'cert')
@@ -48,10 +51,10 @@ function pdfTools(options, callback) {
 
   args.push('--destination', '-');
 
-  [ 'font', 'cert', 'certpass', 'certformat', 'data' ].forEach((key) => {
+  [ 'font', 'cert', 'certpass', 'certformat', 'data', 'logFile', 'logLevel' ].forEach((key) => {
     const val = options[key];
     if (val) {
-      args.push('--' + key);
+      args.push('--' + _.kebabCase(key));
       args.push(quote(val));
     }
   });

@@ -9,9 +9,10 @@ const Rimraf = require('rimraf');
 const Mkdirp = require('mkdirp');
 const _ = require('lodash');
 
-
 // Set to true to create the result of every test, to manually check the result files
 const alwaysWriteResults = false;
+
+const logFilePath = Path.join(__dirname, '../tepez-pdf-tools.log');
 
 const RimrafAsync = Bluebird.promisify(Rimraf);
 const MkdirpAsync = Bluebird.promisify(Mkdirp);
@@ -26,6 +27,10 @@ function getAssetPath(asset) {
 // since there are some minor changes between the expected PDF files and the files we
 // generate at test time, we just make sure that X percent of them is the same
 function getMatchRate(buffer1, buffer2) {
+  if (!buffer1 || !buffer2) {
+    return 0;
+  }
+
   let matches = 0;
   for (let i = 0; i < Math.min(buffer1.length, buffer2.length); i++) {
     if (buffer1[i] === buffer2[i]) {
@@ -248,7 +253,64 @@ describe('tepez-pdf-tools', function() {
         { type: 'img',  key: 'image', content: imageFiles.image2 }
       ]; }
     },
-
+    {
+      name: 'imageNewPagePath',
+      expected: 'imageNewPagePath',
+      expectedMatchRate: 0.99,
+      desc: 'image by path on a new page',
+      options: function () { return {
+        sourceContent: sourceFiles.blank
+      }; },
+      data: function() { return [
+        {
+          type: 'img',
+          key: 'image',
+          path: getAssetPath('img/image.png'),
+          placement: 'new-page'
+        },
+        {
+          type: 'img',
+          key: 'image2',
+          path: getAssetPath('img/image2.jpg'),
+          placement: 'new-page'
+        },
+        {
+          type: 'img',
+          key: 'image3',
+          path: getAssetPath('img/image3.gif'),
+          placement: 'new-page'
+        }
+      ]; }
+    },
+    {
+      name: 'imageNewPageContent',
+      expected: 'imageNewPageContent',
+      expectedMatchRate: 0.99,
+      desc: 'image by content on a new page',
+      options: function () { return {
+        sourceContent: sourceFiles.blank
+      }; },
+      data: function() { return [
+        {
+          type: 'img',
+          key: 'image',
+          content: imageFiles.image,
+          placement: 'new-page'
+        },
+        {
+          type: 'img',
+          key: 'image',
+          content: imageFiles.image2,
+          placement: 'new-page'
+        },
+        {
+          type: 'img',
+          key: 'image',
+          content: imageFiles.image3,
+          placement: 'new-page'
+        }
+      ]; }
+    },
     {
       name: 'attachmentPath',
       expected: 'attachmentPath',
@@ -455,7 +517,9 @@ describe('tepez-pdf-tools', function() {
 
       const pdfToolsOptions = {
         data: spec.dataFilePath,
-        nailgun: useNailgun
+        nailgun: useNailgun,
+        logLevel: 'INFO',
+        logFile: logFilePath
       };
 
       if (specOpts.options) {
@@ -490,7 +554,7 @@ describe('tepez-pdf-tools', function() {
 
           // it's important not to do the expectations before, because that would raise an
           // error and we won't have the pdf file in the result dir to inspect
-          expect(res.length).toBe(expected.length);
+          expect(res.length).toBe(expected ? expected.length : -1);
           expect(matchRate).toBeGreaterThan(expectedMatchRate);
 
         } else {
@@ -506,7 +570,8 @@ describe('tepez-pdf-tools', function() {
       });
     }
 
-    describe(`${specOpts.desc} (spec ${specIdx} )`, function () {
+    const describeFn = specOpts.fit ? fdescribe : describe;
+    describeFn(`${specOpts.desc} (spec ${specIdx} )`, function () {
       // Create a temporary file with the field data
       beforeEach(function (done) {
         spec = this;
@@ -530,5 +595,12 @@ describe('tepez-pdf-tools', function() {
         runTest(true, done);
       });
     });
+  });
+
+  it('should have created only a single log file and release it', () => {
+    expect(Fs.lstatSync(logFilePath).isFile()).toBe(true);
+    expect(() => { Fs.lstatSync(`${logFilePath}.lck`); }).toThrow();
+    expect(() => { Fs.lstatSync(`${logFilePath}.1`); }).toThrow();
+    expect(() => { Fs.lstatSync(`${logFilePath}.1.lck`); }).toThrow();
   });
 });
