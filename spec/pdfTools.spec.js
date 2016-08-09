@@ -229,17 +229,20 @@ describe('tepez-pdf-tools', function() {
         {
           type: 'img',
           path: specUtil.getAssetPath('img/image.png'),
-          placement: 'new-page'
+          placement: 'new-page',
+          'max-width': 75
         },
         {
           type: 'img',
           path: specUtil.getAssetPath('img/image2.jpg'),
           placement: 'new-page'
+          // max-width should default to 0.5
         },
         {
           type: 'img',
           path: specUtil.getAssetPath('img/image3.gif'),
-          placement: 'new-page'
+          placement: 'new-page',
+          'max-width': 25
         }
       ]
     },
@@ -255,17 +258,20 @@ describe('tepez-pdf-tools', function() {
         {
           type: 'img',
           content: imageFiles.image,
-          placement: 'new-page'
+          placement: 'new-page',
+          'max-width': 75
         },
         {
           type: 'img',
           content: imageFiles.image2,
           placement: 'new-page'
+          // max-width should default to 0.5
         },
         {
           type: 'img',
           content: imageFiles.image3,
-          placement: 'new-page'
+          placement: 'new-page',
+          'max-width': 25
         }
       ]; }
     },
