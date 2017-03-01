@@ -13,8 +13,15 @@ Bluebird.promisifyAll(Tmp,{multiArgs: true});
 
 const logFilePath = Path.join(__dirname, '../tepez-pdf-tools.log');
 
-describe('tepez-pdf-tools', function() {
-  
+describe('tepez-pdf-tools', () => {
+  let spec;
+
+  afterEach(() => spec = null);
+
+  beforeEach(function () {
+    spec = this;
+  });
+
   let sourceFiles, expectedFiles, imageFiles;
 
   beforeAll((done) => {
@@ -25,29 +32,29 @@ describe('tepez-pdf-tools', function() {
     sourceFiles = expectedFiles = imageFiles = null;
   });
 
-  beforeAll(function(done) {
+  beforeAll((done) => {
     specUtil.clearResultDirectory().jasmineDone(done);
   });
 
   // read source files
-  beforeAll(function(done) {
-    specUtil.readDirectory('src').then(function(files) {
+  beforeAll((done) => {
+    specUtil.readDirectory('src').then((files) => {
       sourceFiles = files;
     }).jasmineDone(done);
   });
 
   // read expected files
-  beforeAll(function(done) {
-    specUtil.readDirectory('expected').then(function(files) {
+  beforeAll((done) => {
+    specUtil.readDirectory('expected').then((files) => {
       expectedFiles = files;
     }).jasmineDone(done);
   });
 
   // read image files
-  beforeAll(function(done) {
-    specUtil.readDirectory('img').then(function(files) {
+  beforeAll((done) => {
+    specUtil.readDirectory('img').then((files) => {
       // encode each image as base64
-      _.forEach(files, function(contet, key) {
+      _.forEach(files, (contet, key) => {
         files[key] = new Buffer(contet).toString('base64');
       });
       imageFiles = files;
@@ -56,7 +63,7 @@ describe('tepez-pdf-tools', function() {
 
   let origDefaultTimeoutInterval;
 
-  beforeEach(function() {
+  beforeEach(() => {
     origDefaultTimeoutInterval = jasmine.DEFAULT_TIMEOUT_INTERVAL;
     jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
   });
@@ -65,26 +72,26 @@ describe('tepez-pdf-tools', function() {
     jasmine.DEFAULT_TIMEOUT_INTERVAL = origDefaultTimeoutInterval;
   });
 
-  describe('options', function() {
-    describe('when sourcePath and sourceContent are given', function () {
-      it('should throw an error', function () {
-        expect(function() {
+  describe('options', () => {
+    describe('when sourcePath and sourceContent are given', () => {
+      it('should throw an error', () => {
+        expect(() => {
           pdfTools({ sourcePath: specUtil.getAssetPath('src.pdf'), sourceContent: sourceFiles.blank });
         }).toThrowError(Error, /"value" contains a conflict between exclusive peers \[sourcePath, sourceContent]/);
       });
     });
 
-    describe('when certpass is given without cert', function () {
-      it('should throw an error', function () {
-        expect(function() {
+    describe('when certpass is given without cert', () => {
+      it('should throw an error', () => {
+        expect(() => {
           pdfTools({ sourceContent: sourceFiles.blank, certpass: 'password' });
         }).toThrowError(Error);
       });
     });
 
-    describe('when certformat is given without cert', function () {
-      it('should throw an error', function () {
-        expect(function() {
+    describe('when certformat is given without cert', () => {
+      it('should throw an error', () => {
+        expect(() => {
           pdfTools({ sourceContent: sourceFiles.blank, certformat: 'pkcs12' });
         }).toThrowError(Error);
       });
@@ -101,7 +108,7 @@ describe('tepez-pdf-tools', function() {
         { type: 'text', key:'field1', value: 'value 1' },
         { type: 'text', key:'field2', value: 'value 2' }
       ],
-      options: function () { return {
+      options: () => { return {
         sourcePath: specUtil.getAssetPath('src/text.pdf')
       }; }
     },
@@ -113,7 +120,7 @@ describe('tepez-pdf-tools', function() {
         { type: 'text', key:'field1', value: 'value 1' },
         { type: 'text', key:'field2', value: 'value 2' }
       ],
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.text
       }; }
     },
@@ -125,7 +132,7 @@ describe('tepez-pdf-tools', function() {
         { key:'field1', value: 'value 1' },
         { key:'field2', value: 'value 2' }
       ],
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.text
       }; }
     },
@@ -137,7 +144,7 @@ describe('tepez-pdf-tools', function() {
         { type: 'checkbox', key:'field1', value: true },
         { type: 'checkbox', key:'field2', value: 'xxx' }
       ],
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.text
       }; }
     },
@@ -146,7 +153,7 @@ describe('tepez-pdf-tools', function() {
       expected: 'textNoValue',
       desc: 'text - no value',
       data: [],
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.text
       }; }
     },
@@ -155,7 +162,7 @@ describe('tepez-pdf-tools', function() {
       expected: 'checkboxChecked',
       desc: 'checkbox - checked',
       data: [ { type: 'checkbox', key:'checkbox', value: true } ],
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.checkbox
       }; }
     },
@@ -164,7 +171,7 @@ describe('tepez-pdf-tools', function() {
       expected: 'checkboxNotChecked',
       desc: 'checkbox - not checked',
       data: [ { type: 'checkbox', key:'checkbox', value: false } ],
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.checkbox
       }; }
     },
@@ -173,7 +180,7 @@ describe('tepez-pdf-tools', function() {
       expected: 'checkboxNotChecked',
       desc: 'checkbox - wrong type (text instead of checkbox)',
       data: [ { type: 'text', key:'checkbox', value: 'xxx' } ],
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.checkbox
       }; }
     },
@@ -182,7 +189,7 @@ describe('tepez-pdf-tools', function() {
       expected: 'checkboxNotChecked',
       desc: 'checkbox - invalid value (string instead of true/false)',
       data: [ { type: 'checkbox', key:'checkbox', value: 'xxx' } ],
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.checkbox
       }; }
     },
@@ -191,7 +198,7 @@ describe('tepez-pdf-tools', function() {
       expected: 'checkboxNotChecked',
       desc: 'checkbox - no value',
       data: [],
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.checkbox
       }; }
     },
@@ -199,7 +206,7 @@ describe('tepez-pdf-tools', function() {
       name: 'imagePath',
       expected: 'imagePath',
       desc: 'image by path',
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.image
       }; },
       data: [
@@ -210,10 +217,10 @@ describe('tepez-pdf-tools', function() {
       name: 'imageContent',
       expected: 'imageContent',
       desc: 'image by content',
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.image
       }; },
-      data: function() { return [
+      data: () => { return [
         { type: 'img',  key: 'image', content: imageFiles.image2 }
       ]; }
     },
@@ -222,7 +229,7 @@ describe('tepez-pdf-tools', function() {
       expected: 'imageNewPagePath',
       desc: 'image by path on a new page',
       expectedPagesNum: 4,
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.blank
       }; },
       data: [
@@ -251,10 +258,10 @@ describe('tepez-pdf-tools', function() {
       expected: 'imageNewPageContent',
       desc: 'image by content on a new page',
       expectedPagesNum: 4,
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.blank
       }; },
-      data: function() { return [
+      data: () => { return [
         {
           type: 'img',
           content: imageFiles.image,
@@ -281,7 +288,7 @@ describe('tepez-pdf-tools', function() {
       desc: 'attachment by path (no desc and no fileDisplay)',
       compareBytes: true,
       expectedByesMatchRate: 0.997,
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.blank
       }; },
       data: [
@@ -295,7 +302,7 @@ describe('tepez-pdf-tools', function() {
       compareBytes: true,
       expectedByesMatchRate: 0.999,
       desc: 'attachment by path, with desc (no fileDisplay)',
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.blank
       }; },
       data: [
@@ -317,7 +324,7 @@ describe('tepez-pdf-tools', function() {
       compareBytes: true,
       expectedByesMatchRate: 0.999,
       desc: 'attachment by path, with fileDisplay (no desc)',
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.blank
       }; },
       data: [
@@ -339,7 +346,7 @@ describe('tepez-pdf-tools', function() {
       compareBytes: true,
       expectedByesMatchRate: 0.999,
       desc: 'attachment by path, with fileDisplay and desc',
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.blank
       }; },
       data: [
@@ -363,10 +370,10 @@ describe('tepez-pdf-tools', function() {
       compareBytes: true,
       expectedByesMatchRate: 0.996,
       desc: 'attachment by content (no desc and no fileDisplay) - should skip field since we cannot determine a displayName',
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.blank
       }; },
-      data: function() { return [ {
+      data: () => { return [ {
         type: 'attachment',
         content: imageFiles.image
       } ]; }
@@ -377,10 +384,10 @@ describe('tepez-pdf-tools', function() {
       compareBytes: true,
       expectedByesMatchRate: 0.996,
       desc: 'attachment by content, with desc (no fileDisplay) - should skip field since we cannot determine a displayName',
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.blank
       }; },
-      data: function() { return [ {
+      data: () => { return [ {
         type: 'attachment',
         content: imageFiles.image,
         desc: 'mock file description'
@@ -392,10 +399,10 @@ describe('tepez-pdf-tools', function() {
       compareBytes: true,
       expectedByesMatchRate: 0.999,
       desc: 'attachment by content, with fileDisplay (no desc)',
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.blank
       }; },
-      data: function() { return [ {
+      data: () => { return [ {
         type: 'attachment',
         content: imageFiles.image,
         fileDisplay: 'mockFileDisplay.png'
@@ -407,10 +414,10 @@ describe('tepez-pdf-tools', function() {
       compareBytes: true,
       expectedByesMatchRate: 0.999,
       desc: 'attachment by content, with fileDisplay and desc',
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.blank
       }; },
-      data: function() { return [ {
+      data: () => { return [ {
         type: 'attachment',
         content: imageFiles.image,
         fileDisplay: 'mockFileDisplay.png',
@@ -423,7 +430,7 @@ describe('tepez-pdf-tools', function() {
       compareBytes: true,
       expectedByesMatchRate: 0.99,
       desc: 'should digitally sign file with certificate at cert',
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.text,
         cert: specUtil.getAssetPath('certificate.pfx'),
         certpass: 'password',
@@ -440,7 +447,7 @@ describe('tepez-pdf-tools', function() {
       compareBytes: true,
       expectedByesMatchRate: 0.99,
       desc: 'certformat should default to pkcs12',
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.text,
         cert: specUtil.getAssetPath('certificate.pfx'),
         certpass: 'password'
@@ -454,7 +461,7 @@ describe('tepez-pdf-tools', function() {
       name: 'fontPath',
       expected: 'fontPath',
       desc: 'should use font as path for substitution font',
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.text,
         // font downloaded from http://www.cunliffethompson.com/font/download.html
         font: specUtil.getAssetPath('shuneet_03_book_v21.OTF')
@@ -468,7 +475,7 @@ describe('tepez-pdf-tools', function() {
       name: 'fontEmbedded',
       expected: 'fontEmbedded',
       desc: 'when font is arialuni.ttf, should use arialuni.ttf embedded in jar',
-      options: function () { return {
+      options: () => { return {
         sourceContent: sourceFiles.text,
         font: 'arialuni.ttf'
       }; },
@@ -477,9 +484,7 @@ describe('tepez-pdf-tools', function() {
         { type: 'text', key:'field2', value: 'ידה ידה ידה' }
       ]
     }
-  ].forEach(function(specOpts, specIdx) {
-    let spec;
-    
+  ].forEach((specOpts, specIdx) => {
     Joi.assert(specOpts, Joi.object().keys({
       name: Joi.string().required(),
       expected: Joi.string().required(),
@@ -508,7 +513,7 @@ describe('tepez-pdf-tools', function() {
         _.assign(pdfToolsOptions, specOpts.options.call(this));
       }
 
-      const stdout = pdfTools(pdfToolsOptions, function (err) {
+      const stdout = pdfTools(pdfToolsOptions, (err) => {
         const res = Buffer.concat(resBuffers);
         expect(err).toBe(null);
 
@@ -551,16 +556,15 @@ describe('tepez-pdf-tools', function() {
         }).jasmineDone(done);
       });
 
-      stdout.on('data',function(buffer){
+      stdout.on('data',(buffer) => {
         resBuffers.push(buffer);
       });
     }
 
     const describeFn = specOpts.fit ? fdescribe : describe;
-    describeFn(`${specOpts.desc} (spec ${specIdx} )`, function () {
+    describeFn(`${specOpts.desc} (spec ${specIdx} )`, () => {
       // Create a temporary file with the field data
-      beforeEach(function (done) {
-        spec = this;
+      beforeEach((done) => {
         let data = specOpts.data;
         if (_.isFunction(specOpts.data)) {
           data = specOpts.data.call(this);
@@ -573,11 +577,11 @@ describe('tepez-pdf-tools', function() {
         }).delay(1000).jasmineDone(done);
       });
 
-      it('normal execution', function (done) {
+      it('normal execution', (done) => {
         runTest(false, done);
       });
 
-      it('using nailgun', function (done) {
+      it('using nailgun', (done) => {
         runTest(true, done);
       });
     });
