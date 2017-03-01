@@ -23,6 +23,8 @@
   },
   "devDependencies": {
     "bluebird": "^3.4.1",
+    "chalk": "^1.1.3",
+    "dotenv": "^4.0.0",
     "image-diff-tester": "^0.1.0",
     "imagemagick-stream": "^4.1.1",
     "jasmine": "^2.4.1",
