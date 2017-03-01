@@ -21,6 +21,7 @@ function pdfTools(options, callback) {
     sourceContent: Joi.any().description('the content of the source file'),
     font: Joi.string(),
     cert: Joi.string(),
+    language: Joi.string(),
     certpass: Joi.string(),
     certformat: Joi.string(),
     data: Joi.string(),
@@ -51,7 +52,7 @@ function pdfTools(options, callback) {
 
   args.push('--destination', '-');
 
-  [ 'font', 'cert', 'certpass', 'certformat', 'data', 'logFile', 'logLevel' ].forEach((key) => {
+  [ 'font', 'cert', 'certpass', 'certformat', 'data', 'logFile', 'logLevel', 'language' ].forEach((key) => {
     const val = options[key];
     if (val) {
       args.push('--' + _.kebabCase(key));

@@ -79,7 +79,10 @@ describe('tepez-pdf-tools', () => {
     describe('when sourcePath and sourceContent are given', () => {
       it('should throw an error', () => {
         expect(() => {
-          spec.pdfTools({ sourcePath: specUtil.getAssetPath('src.pdf'), sourceContent: sourceFiles.blank });
+          spec.pdfTools({
+            sourcePath: specUtil.getAssetPath('src.pdf'),
+            sourceContent: sourceFiles.blank
+          });
         }).toThrowError(Error, /"value" contains a conflict between exclusive peers \[sourcePath, sourceContent]/);
       });
     });
@@ -87,7 +90,10 @@ describe('tepez-pdf-tools', () => {
     describe('when certpass is given without cert', () => {
       it('should throw an error', () => {
         expect(() => {
-          spec.pdfTools({ sourceContent: sourceFiles.blank, certpass: 'password' });
+          spec.pdfTools({
+            sourceContent: sourceFiles.blank,
+            certpass: 'password'
+          });
         }).toThrowError(Error);
       });
     });
@@ -95,8 +101,32 @@ describe('tepez-pdf-tools', () => {
     describe('when certformat is given without cert', () => {
       it('should throw an error', () => {
         expect(() => {
-          spec.pdfTools({ sourceContent: sourceFiles.blank, certformat: 'pkcs12' });
+          spec.pdfTools({
+            sourceContent: sourceFiles.blank,
+            certformat: 'pkcs12'
+          });
         }).toThrowError(Error);
+      });
+    });
+
+    describe('language', () => {
+      it('should pass the language option when given', () => {
+        spec.pdfTools({
+          sourceContent: sourceFiles.blank,
+          language: 'en-US'
+        });
+        expect(spec.spawn.calls.length).toBe(1);
+        expect(spec.spawn.calls[0].args.indexOf('--language')).toBeGreaterThan(0);
+        expect(spec.spawn.calls[0].args.indexOf('en-US')).toBe(spec.spawn.calls[0].args.indexOf('--language') + 1);
+      });
+
+      it('should NOT pass the language option NOT when given', () => {
+        spec.pdfTools({
+          sourceContent: sourceFiles.blank
+        });
+        expect(spec.spawn.calls.length).toBe(1);
+        expect(spec.spawn.calls[0].args.indexOf('--language')).toBe(-1);
+        expect(spec.spawn.calls[0].args.indexOf('en-US')).toBe(-1);
       });
     });
   });
