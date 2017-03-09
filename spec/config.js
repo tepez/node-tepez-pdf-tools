@@ -35,6 +35,7 @@ internals.getImageDiffOptions = function () {
         mode: imageDiffMode,
         currentDir: 'images-diff/current',
         diffDir: 'images-diff/diff',
+        deleteIdenticalFromCurrent: true,
         mismatchThreshold: 0
     }
 };
