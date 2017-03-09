@@ -14,7 +14,7 @@ If `tepez-pdf-tools.jar` is not on working directory, then `TP_PDF_TOOLS_JAR_PAT
 
 
 ```javascript
-var PdfTools = require('tepez-pdf-tools');
+const PdfTools = require('tepez-pdf-tools');
 
 // path
 PdfTools({ sourcePath: "c:/in.pdf" }).pipe(fs.createWriteStream('out.pdf'));
@@ -23,7 +23,7 @@ PdfTools({ sourcePath: "c:/in.pdf" }).pipe(fs.createWriteStream('out.pdf'));
 PdfTools({ sourceContent: "%PDF-1.5..." }).pipe(res);
   
 // Optional callback
-var stream = PdfTools({ sourceContent: "%PDF-1.5..." }, function(err) {
+const stream = PdfTools({ sourceContent: "%PDF-1.5..." }, function(err) {
   if (err) {
     // handle error
   } else {
@@ -31,6 +31,21 @@ var stream = PdfTools({ sourceContent: "%PDF-1.5..." }, function(err) {
   }
 );
 
+```
+
+### Get a report of the form fields in the file
+
+```javascript
+const PdfTools = require('tepez-pdf-tools');
+
+// path
+PdfTools({ 
+    sourcePath: "c:/in.pdf",
+    getFields: true
+}).then((fields) => {
+    
+);
+  
 ```
 
 Borrows a-lot from [node-wkhtmltopdf](https://github.com/devongovett/node-wkhtmltopdf)

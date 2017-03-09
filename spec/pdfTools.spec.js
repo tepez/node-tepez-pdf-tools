@@ -131,6 +131,136 @@ describe('tepez-pdf-tools', () => {
     });
   });
 
+  describe('getFields', () => {
+    beforeEach(() => {
+      spec.pdfTools = require('..');
+      spec.expectedFields = [
+        {
+          "name": "field1",
+          "occurrences": "2",
+          "type": "Text",
+          "page": "1.0",
+          "left": "90.72",
+          "bottom": "742.56",
+          "width": "136.92",
+          "height": "12.840027",
+          "font name": "Helvetica",
+          "font size": "auto",
+          "max length": "",
+          "comb": "",
+          "multi line": "",
+          "alignemnt": "Left",
+          "border color": "",
+          "checkbox style": ""
+        },
+        {
+          "name": "field1",
+          "occurrences": "2",
+          "type": "Text",
+          "page": "1.0",
+          "left": "367.2",
+          "bottom": "742.56",
+          "width": "137.03998",
+          "height": "12.840027",
+          "font name": "Helvetica",
+          "font size": "auto",
+          "max length": "",
+          "comb": "",
+          "multi line": "",
+          "alignemnt": "Left",
+          "border color": "",
+          "checkbox style": ""
+        },
+        {
+          "name": "field2",
+          "occurrences": "2",
+          "type": "Text",
+          "page": "1.0",
+          "left": "90.72",
+          "bottom": "714.72",
+          "width": "136.92",
+          "height": "12.840027",
+          "font name": "Helvetica",
+          "font size": "auto",
+          "max length": "",
+          "comb": "",
+          "multi line": "",
+          "alignemnt": "Left",
+          "border color": "",
+          "checkbox style": ""
+        },
+        {
+          "name": "field2",
+          "occurrences": "2",
+          "type": "Text",
+          "page": "1.0",
+          "left": "367.2",
+          "bottom": "714.72",
+          "width": "137.03998",
+          "height": "12.840027",
+          "font name": "Helvetica",
+          "font size": "auto",
+          "max length": "",
+          "comb": "",
+          "multi line": "",
+          "alignemnt": "Left",
+          "border color": "",
+          "checkbox style": ""
+        }
+      ];
+    });
+
+    it('should resolve empty array when there are no fields', (done) => {
+      spec.pdfTools({
+        sourceContent: sourceFiles.blank,
+        getFields: true,
+        nailgun: false
+      }).then((fields) => {
+        expect(fields).toEqual([]);
+      }).then(done, done.fail);
+    });
+
+    it('should work with sourceContent / without nailgun', (done) => {
+      spec.pdfTools({
+        sourceContent: sourceFiles.text,
+        getFields: true,
+        nailgun: false
+      }).then((fields) => {
+        expect(fields).toEqual(spec.expectedFields)
+      }).then(done, done.fail);
+    });
+
+    it('should work with sourceContent / with nailgun', (done) => {
+      spec.pdfTools({
+        sourceContent: sourceFiles.text,
+        getFields: true,
+        nailgun: true
+      }).then((fields) => {
+        expect(fields).toEqual(spec.expectedFields)
+      }).then(done, done.fail);
+    });
+
+    it('should work with sourcePath / without nailgun', (done) => {
+      spec.pdfTools({
+        sourcePath: specUtil.getAssetPath('src/text.pdf'),
+        getFields: true,
+        nailgun: false
+      }).then((fields) => {
+        expect(fields).toEqual(spec.expectedFields)
+      }).then(done, done.fail);
+    });
+
+    it('should work with sourcePath / with nailgun', (done) => {
+      spec.pdfTools({
+        sourcePath: specUtil.getAssetPath('src/text.pdf'),
+        getFields: true,
+        nailgun: true
+      }).then((fields) => {
+        expect(fields).toEqual(spec.expectedFields)
+      }).then(done, done.fail);
+    });
+  });
+
   describe('created files', () => {
     beforeEach(() => {
       spec.origDefaultTimeoutInterval = jasmine.DEFAULT_TIMEOUT_INTERVAL;

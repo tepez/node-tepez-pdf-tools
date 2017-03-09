@@ -1,5 +1,5 @@
 'use strict';
-
+const CsvParse = require('csv-parse');
 const spawn = require('child_process').spawn;
 const Joi = require('joi');
 const _ = require('lodash');
@@ -16,22 +16,24 @@ function quote(val) {
 function pdfTools(options, callback) {
   Joi.assert(callback, Joi.func());
   Joi.assert(options, Joi.object().keys({
-    nailgun: Joi.bool().description('use nailgun'),
-    sourcePath: Joi.string().description('path to the source file'),
-    sourceContent: Joi.any().description('the content of the source file'),
-    font: Joi.string(),
-    cert: Joi.string(),
-    language: Joi.string(),
-    certpass: Joi.string(),
-    certformat: Joi.string(),
-    data: Joi.string(),
-    spawnOptions: Joi.object().description('options for the spawn command'),
-    logFile: Joi.string(),
-    logLevel: Joi.string().only('SEVERE', 'WARNING', 'INFO', 'CONFIG', 'FINE', 'FINER', 'FINEST')
-  }).xor('sourcePath', 'sourceContent')
-    // if certpass or certformat is given than require cert
-    .with('certpass', 'cert')
-    .with('certformat', 'cert')
+        nailgun: Joi.bool().description('use nailgun'),
+        sourcePath: Joi.string().description('path to the source file'),
+        sourceContent: Joi.any().description('the content of the source file'),
+        font: Joi.string(),
+        cert: Joi.string(),
+        language: Joi.string(),
+        certpass: Joi.string(),
+        certformat: Joi.string(),
+        data: Joi.string(),
+        spawnOptions: Joi.object().description('options for the spawn command'),
+        logFile: Joi.string(),
+        logLevel: Joi.string().only('SEVERE', 'WARNING', 'INFO', 'CONFIG', 'FINE', 'FINER', 'FINEST'),
+        getFields: Joi.boolean()
+      })
+      .xor('sourcePath', 'sourceContent')
+      // if certpass or certformat is given than require cert
+      .with('certpass', 'cert')
+      .with('certformat', 'cert')
   );
 
   if (typeof options.nailgun === 'undefined') {
@@ -50,9 +52,14 @@ function pdfTools(options, callback) {
     args.push('java', '-jar', jarPath);
   }
 
-  args.push('--destination', '-');
+  args.push('--source');
+  if (options.sourceContent) {
+    args.push('-')
+  } else {
+    args.push(quote(options.sourcePath));
+  }
 
-  [ 'font', 'cert', 'certpass', 'certformat', 'data', 'logFile', 'logLevel', 'language' ].forEach((key) => {
+  [ 'logFile', 'logLevel' ].forEach((key) => {
     const val = options[key];
     if (val) {
       args.push('--' + _.kebabCase(key));
@@ -60,11 +67,18 @@ function pdfTools(options, callback) {
     }
   });
 
-  args.push('--source');
-  if (options.sourceContent) {
-    args.push('-')
+
+  if (options.getFields) {
+    args.push('--print-fields');
   } else {
-    args.push(quote(options.sourcePath));
+    args.push('--destination', '-');
+    [ 'font', 'cert', 'certpass', 'certformat', 'data', 'language' ].forEach((key) => {
+      const val = options[key];
+      if (val) {
+        args.push('--' + _.kebabCase(key));
+        args.push(quote(val));
+      }
+    });
   }
 
   let child;
@@ -85,7 +99,7 @@ function pdfTools(options, callback) {
   function handleError(err) {
     child.removeAllListeners('exit');
     child.kill();
-    
+
     // call the callback if there is one
     if (callback) {
       callback(err);
@@ -96,19 +110,49 @@ function pdfTools(options, callback) {
       stream.emit('error', err);
     }
   }
-  
+
   child.once('error', handleError);
   child.stderr.once('data', (err) => {
     handleError(new Error((err || '').toString().trim()));
   });
-  
-  // write the content to stdin
-  if (options.sourceContent) {
-    child.stdin.end(options.sourceContent);
+
+  if (options.getFields) {
+    return new Promise((resolve, reject) => {
+      const fields = [];
+      const csvParser = CsvParse({
+        columns: true,
+        skip_empty_lines: true
+      });
+
+      csvParser.on('readable', () => {
+        let record;
+        while (record = csvParser.read()) {
+          fields.push(record);
+        }
+      });
+
+      csvParser.on('error', reject);
+
+      csvParser.on('finish', () => {
+        resolve(fields);
+      });
+
+      stream.pipe(csvParser);
+
+      // write the content to stdin
+      if (options.sourceContent) {
+        child.stdin.end(options.sourceContent);
+      }
+    });
+  } else {
+    // write the content to stdin
+    if (options.sourceContent) {
+      child.stdin.end(options.sourceContent);
+    }
+
+    // return stdout stream so we can pipe
+    return stream;
   }
-  
-  // return stdout stream so we can pipe
-  return stream;
 }
 
 module.exports = pdfTools;
