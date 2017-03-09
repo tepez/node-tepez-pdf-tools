@@ -346,7 +346,7 @@ describe('tepez-pdf-tools', () => {
         name: 'attachmentPathDesc',
         expected: 'attachmentPathDesc',
         compareBytes: true,
-        expectedByesMatchRate: 0.999,
+        expectedByesMatchRate: 0.98,
         desc: 'attachment by path, with desc (no fileDisplay)',
         options: () => { return {
           sourceContent: sourceFiles.blank
@@ -368,7 +368,7 @@ describe('tepez-pdf-tools', () => {
         name: 'attachmentPathFileDisplay',
         expected: 'attachmentPathFileDisplay',
         compareBytes: true,
-        expectedByesMatchRate: 0.999,
+        expectedByesMatchRate: 0.98,
         desc: 'attachment by path, with fileDisplay (no desc)',
         options: () => { return {
           sourceContent: sourceFiles.blank
@@ -390,7 +390,7 @@ describe('tepez-pdf-tools', () => {
         name: 'attachmentPathDescFileDisplay',
         expected: 'attachmentPathDescFileDisplay',
         compareBytes: true,
-        expectedByesMatchRate: 0.999,
+        expectedByesMatchRate: 0.98,
         desc: 'attachment by path, with fileDisplay and desc',
         options: () => { return {
           sourceContent: sourceFiles.blank
@@ -443,7 +443,7 @@ describe('tepez-pdf-tools', () => {
         name: 'attachmentContentFileDisplay',
         expected: 'attachmentContentFileDisplay',
         compareBytes: true,
-        expectedByesMatchRate: 0.999,
+        expectedByesMatchRate: 0.98,
         desc: 'attachment by content, with fileDisplay (no desc)',
         options: () => { return {
           sourceContent: sourceFiles.blank
@@ -458,7 +458,7 @@ describe('tepez-pdf-tools', () => {
         name: 'attachmentContentDescFileDisplay',
         expected: 'attachmentContentDescFileDisplay',
         compareBytes: true,
-        expectedByesMatchRate: 0.999,
+        expectedByesMatchRate: 0.98,
         desc: 'attachment by content, with fileDisplay and desc',
         options: () => { return {
           sourceContent: sourceFiles.blank
@@ -474,7 +474,7 @@ describe('tepez-pdf-tools', () => {
         name: 'signed',
         expected: 'signed',
         compareBytes: true,
-        expectedByesMatchRate: 0.99,
+        expectedByesMatchRate: 0.98,
         desc: 'should digitally sign file with certificate at cert',
         options: () => { return {
           sourceContent: sourceFiles.text,
@@ -491,7 +491,7 @@ describe('tepez-pdf-tools', () => {
         name: 'signedNoCertFormat',
         expected: 'signed',
         compareBytes: true,
-        expectedByesMatchRate: 0.99,
+        expectedByesMatchRate: 0.98,
         desc: 'certformat should default to pkcs12',
         options: () => { return {
           sourceContent: sourceFiles.text,
@@ -536,7 +536,7 @@ describe('tepez-pdf-tools', () => {
         expected: Joi.string().required(),
         desc: Joi.string().required(),
         compareBytes: Joi.boolean(),
-        expectedByesMatchRate: Joi.number().min(0.99).max(1),
+        expectedByesMatchRate: Joi.number().min(0.98).max(1),
         expectedPagesNum: Joi.number().integer().min(1),
         options: Joi.func().required(),
         data: Joi.alternatives().try(
@@ -581,7 +581,7 @@ describe('tepez-pdf-tools', () => {
             if (specOpts.compareBytes) {
 
               const expected = expectedFiles[specOpts.expected];
-              const expectedByesMatchRate = specOpts.expectedByesMatchRate || 0.99;
+              const expectedByesMatchRate = specOpts.expectedByesMatchRate || 0.98;
 
               // check how much the expected and the result files are common
               const matchRate = specUtil.getMatchRate(res, expected);
