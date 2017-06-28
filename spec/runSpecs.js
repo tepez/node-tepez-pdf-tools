@@ -8,13 +8,30 @@ const Config = require('./config');
 const NailgunReporter = require('./nailgunReporter');
 
 const jasmine = new Jasmine();
-jasmine.loadConfigFile('spec/support/jasmine.json');
-jasmine.addReporter(new JasmineSpecReporter({
-    displaySpecDuration: true
-}));
+jasmine.loadConfig({
+    spec_dir: 'spec',
+    spec_files: [
+        '**/*.spec.js'
+    ],
+    helpers: [
+        'helpers/**/*.js'
+    ]
+});
 
 jasmine.addReporter(new NodeJasmineImageDiffTester(Config.imageDiff));
 jasmine.addReporter(new NailgunReporter());
+jasmine.addReporter(new JasmineSpecReporter.SpecReporter({
+    displaySpecDuration: true,
+    displayFailuresSummary: true,
+    displaySuccessfulSpec: true,
+    displayStacktrace: 'all'
+}));
+
+// Disable default dots reporter since we use jasmine-spec-reporter
+jasmine.configureDefaultReporter({
+    print: () => {}
+});
+
 jasmine.execute();
 
 
