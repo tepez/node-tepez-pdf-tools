@@ -290,7 +290,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'textValid',
-        expected: 'textValid',
         desc: 'text - type is omitted',
         data: [
           { type: 'text', key:'field1', value: 'value 1' },
@@ -326,7 +325,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'textNoValue',
-        expected: 'textNoValue',
         desc: 'text - no value',
         data: [],
         options: () => { return {
@@ -335,7 +333,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'checkboxChecked',
-        expected: 'checkboxChecked',
         desc: 'checkbox - checked',
         data: [ { type: 'checkbox', key:'checkbox', value: true } ],
         options: () => { return {
@@ -344,7 +341,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'checkboxNotChecked',
-        expected: 'checkboxNotChecked',
         desc: 'checkbox - not checked',
         data: [ { type: 'checkbox', key:'checkbox', value: false } ],
         options: () => { return {
@@ -380,7 +376,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'imagePath',
-        expected: 'imagePath',
         desc: 'image by path',
         options: () => { return {
           sourceContent: sourceFiles.image
@@ -391,7 +386,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'imageContent',
-        expected: 'imageContent',
         desc: 'image by content',
         options: () => { return {
           sourceContent: sourceFiles.image
@@ -402,7 +396,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'imageNewPagePath',
-        expected: 'imageNewPagePath',
         desc: 'image by path on a new page',
         expectedPagesNum: 4,
         options: () => { return {
@@ -431,7 +424,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'imageNewPageContent',
-        expected: 'imageNewPageContent',
         desc: 'image by content on a new page',
         expectedPagesNum: 4,
         options: () => { return {
@@ -460,7 +452,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'attachmentPath',
-        expected: 'attachmentPath',
         desc: 'attachment by path (no desc and no fileDisplay)',
         compareBytes: true,
         expectedByesMatchRate: 0.997,
@@ -474,7 +465,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'attachmentPathDesc',
-        expected: 'attachmentPathDesc',
         compareBytes: true,
         expectedByesMatchRate: 0.98,
         desc: 'attachment by path, with desc (no fileDisplay)',
@@ -496,7 +486,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'attachmentPathFileDisplay',
-        expected: 'attachmentPathFileDisplay',
         compareBytes: true,
         expectedByesMatchRate: 0.98,
         desc: 'attachment by path, with fileDisplay (no desc)',
@@ -518,7 +507,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'attachmentPathDescFileDisplay',
-        expected: 'attachmentPathDescFileDisplay',
         compareBytes: true,
         expectedByesMatchRate: 0.98,
         desc: 'attachment by path, with fileDisplay and desc',
@@ -542,7 +530,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'attachmentContent',
-        expected: 'attachmentContent',
         compareBytes: true,
         expectedByesMatchRate: 0.996,
         desc: 'attachment by content (no desc and no fileDisplay) - should skip field since we cannot determine a displayName',
@@ -556,7 +543,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'attachmentContentDesc',
-        expected: 'attachmentContentDesc',
         compareBytes: true,
         expectedByesMatchRate: 0.996,
         desc: 'attachment by content, with desc (no fileDisplay) - should skip field since we cannot determine a displayName',
@@ -571,7 +557,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'attachmentContentFileDisplay',
-        expected: 'attachmentContentFileDisplay',
         compareBytes: true,
         expectedByesMatchRate: 0.98,
         desc: 'attachment by content, with fileDisplay (no desc)',
@@ -586,7 +571,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'attachmentContentDescFileDisplay',
-        expected: 'attachmentContentDescFileDisplay',
         compareBytes: true,
         expectedByesMatchRate: 0.98,
         desc: 'attachment by content, with fileDisplay and desc',
@@ -602,7 +586,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'signed',
-        expected: 'signed',
         compareBytes: true,
         expectedByesMatchRate: 0.98,
         desc: 'should digitally sign file with certificate at cert',
@@ -635,7 +618,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'fontPath',
-        expected: 'fontPath',
         desc: 'should use font as path for substitution font',
         options: () => { return {
           sourceContent: sourceFiles.text,
@@ -649,7 +631,6 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'fontEmbedded',
-        expected: 'fontEmbedded',
         desc: 'when font is arialuni.ttf, should use arialuni.ttf embedded in jar',
         options: () => { return {
           sourceContent: sourceFiles.text,
@@ -663,8 +644,9 @@ describe('tepez-pdf-tools', () => {
     ].forEach((specOpts, specIdx) => {
       Joi.assert(specOpts, Joi.object().keys({
         name: Joi.string().required(),
-        expected: Joi.string().required(),
+        expected: Joi.string().optional(),
         desc: Joi.string().required(),
+        fit: Joi.boolean().strict(),
         compareBytes: Joi.boolean(),
         expectedByesMatchRate: Joi.number().min(0.98).max(1),
         expectedPagesNum: Joi.number().integer().min(1),
@@ -672,21 +654,21 @@ describe('tepez-pdf-tools', () => {
         data: Joi.alternatives().try(
             Joi.array(),
             Joi.func()
-        ).required()
+        ).optional()
       }));
 
       function runTest(useNailgun, done) {
         const resBuffers = [];
 
         const pdfToolsOptions = {
-          data: spec.dataFilePath,
           nailgun: useNailgun,
           logLevel: 'INFO',
           logFile: logFilePath
         };
+        if (spec.dataFilePath) pdfToolsOptions.data = spec.dataFilePath;
 
         if (specOpts.options) {
-          _.assign(pdfToolsOptions, specOpts.options.call(this));
+          _.assign(pdfToolsOptions, specOpts.options());
         }
 
         const stdout = spec.pdfTools(pdfToolsOptions, (err) => {
@@ -710,7 +692,7 @@ describe('tepez-pdf-tools', () => {
 
             if (specOpts.compareBytes) {
 
-              const expected = expectedFiles[specOpts.expected];
+              const expected = expectedFiles[specOpts.expected || specOpts.name];
               const expectedByesMatchRate = specOpts.expectedByesMatchRate || 0.98;
 
               // check how much the expected and the result files are common
@@ -737,20 +719,26 @@ describe('tepez-pdf-tools', () => {
         });
       }
 
-      const describeFn = specOpts.fit ? fdescribe : describe;
+      const describeFn = specOpts.fit ?
+          fdescribe :
+          describe;
+
       describeFn(`${specOpts.desc} (spec ${specIdx} )`, () => {
         // Create a temporary file with the field data
         beforeEach((done) => {
-          let data = specOpts.data;
-          if (_.isFunction(specOpts.data)) {
-            data = specOpts.data.call(this);
-          }
+          const data = _.isFunction(specOpts.data)
+            ? specOpts.data()
+            : specOpts.data;
 
-          Tmp.fileAsync('tepez-pdf-tools-test').spread((path, fd) => {
-            spec.dataFilePath = path;
-            Fs.writeSync(fd, JSON.stringify(data));
-            Fs.closeSync(fd);
-          }).delay(1000).jasmineDone(done);
+          if (data) {
+            Tmp.fileAsync('tepez-pdf-tools-test').spread((path, fd) => {
+              spec.dataFilePath = path;
+              Fs.writeSync(fd, JSON.stringify(data));
+              Fs.closeSync(fd);
+            }).delay(1000).jasmineDone(done);
+          } else {
+            done();
+          }
         });
 
         it('normal execution', (done) => {
