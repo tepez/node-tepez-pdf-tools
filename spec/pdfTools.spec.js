@@ -640,6 +640,76 @@ describe('tepez-pdf-tools', () => {
           { type: 'text', key:'field1', value: 'בלה בלה בלה' },
           { type: 'text', key:'field2', value: 'ידה ידה ידה' }
         ]
+      },
+      {
+        name: 'watermarkHe',
+        desc: 'watermark in Hebrew with default options',
+        options: () => { return {
+          sourceContent: sourceFiles.blank,
+          watermark: {
+            text: 'אחת שתיים שלוש'
+          },
+          font: 'arialuni.ttf'
+        }; }
+      },
+      {
+        name: 'watermarkHeOpacity25Rotation0FontSize24',
+        desc: 'watermark in Hebrew with custom options',
+        options: () => { return {
+          sourceContent: sourceFiles.blank,
+          watermark: {
+            text: 'אחת שתיים שלוש',
+            opacity: 25,
+            rotation: 0,
+            fontSize: 24
+          },
+          font: 'arialuni.ttf'
+        }; }
+      },
+      {
+        name: 'watermarkEn',
+        desc: 'watermark in English with default options',
+        options: () => { return {
+          sourceContent: sourceFiles.blank,
+          watermark: {
+            text: 'One Two Three'
+          }
+        }; }
+      },
+      {
+        name: 'watermarkHeCustomOpacity25Rotation0FontSize24',
+        desc: 'watermark in English with custom options',
+        options: () => { return {
+          sourceContent: sourceFiles.blank,
+          watermark: {
+            text: 'One Two Three',
+            opacity: 25,
+            rotation: 0,
+            fontSize: 24
+          }
+        }; }
+      },
+      {
+        name: 'watermarkEnHe',
+        desc: 'watermark in English and Hebrew (English first) with default options',
+        options: () => { return {
+          sourceContent: sourceFiles.blank,
+          watermark: {
+            text: 'One Two Three אחת שתיים שלוש'
+          },
+          font: 'arialuni.ttf'
+        }; }
+      },
+      {
+        name: 'watermarkHeEn',
+        desc: 'watermark in Hebrew and English  (Hebrew first) with default options',
+        options: () => { return {
+          sourceContent: sourceFiles.blank,
+          watermark: {
+            text: 'אחת שתיים שלוש One Two Three'
+          },
+          font: 'arialuni.ttf'
+        }; }
       }
     ].forEach((specOpts, specIdx) => {
       Joi.assert(specOpts, Joi.object().keys({

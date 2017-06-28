@@ -28,7 +28,13 @@ function pdfTools(options, callback) {
         spawnOptions: Joi.object().description('options for the spawn command'),
         logFile: Joi.string(),
         logLevel: Joi.string().only('SEVERE', 'WARNING', 'INFO', 'CONFIG', 'FINE', 'FINER', 'FINEST'),
-        getFields: Joi.boolean()
+        getFields: Joi.boolean(),
+        watermark: Joi.object().keys({
+          text: Joi.string().required(),
+          rotation: Joi.number().integer().min(0).max(360),
+          opacity: Joi.number().integer().min(0).max(100),
+          fontSize: Joi.number().integer().min(1)
+        })
       })
       .xor('sourcePath', 'sourceContent')
       // if certpass or certformat is given than require cert
@@ -79,6 +85,12 @@ function pdfTools(options, callback) {
         args.push(quote(val));
       }
     });
+
+    if (options.watermark) {
+      _.forEach(options.watermark, (value, key) => {
+        args.push(`--watermark-${_.kebabCase(key)}`, quote(value))
+      });
+    }
   }
 
   let child;
