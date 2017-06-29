@@ -116,8 +116,23 @@ describe('tepez-pdf-tools', () => {
           language: 'en-US'
         });
         expect(spec.spawn.calls.length).toBe(1);
-        expect(spec.spawn.calls[0].args.indexOf('--language')).toBeGreaterThan(0);
-        expect(spec.spawn.calls[0].args.indexOf('en-US')).toBe(spec.spawn.calls[0].args.indexOf('--language') + 1);
+
+        if (process.platform === 'win32') {
+          expect(spec.spawn.calls[0].args).toEqual([
+            'pdfTools.Main',
+            '--source',
+            '-',
+            '--destination',
+            '-',
+            '--language',
+            'en-US'
+          ]);
+        } else {
+          expect(spec.spawn.calls[0].args).toEqual([
+            '-c',
+            'ng pdfTools.Main --source - --destination - --language "en-US" | cat'
+          ]);
+        }
       });
 
       it('should NOT pass the language option NOT when given', () => {
@@ -125,8 +140,21 @@ describe('tepez-pdf-tools', () => {
           sourceContent: sourceFiles.blank
         });
         expect(spec.spawn.calls.length).toBe(1);
-        expect(spec.spawn.calls[0].args.indexOf('--language')).toBe(-1);
-        expect(spec.spawn.calls[0].args.indexOf('en-US')).toBe(-1);
+
+        if (process.platform === 'win32') {
+          expect(spec.spawn.calls[0].args).toEqual([
+            'pdfTools.Main',
+            '--source',
+            '-',
+            '--destination',
+            '-'
+          ]);
+        } else {
+          expect(spec.spawn.calls[0].args).toEqual([
+            '-c',
+            'ng pdfTools.Main --source - --destination - | cat'
+          ]);
+        }
       });
     });
   });
