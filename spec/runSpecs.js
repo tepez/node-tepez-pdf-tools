@@ -5,7 +5,7 @@ const Jasmine = require('jasmine');
 const JasmineSpecReporter = require('jasmine-spec-reporter');
 const NodeJasmineImageDiffTester = require('image-diff-tester/lib/nodeJasmine');
 const Config = require('./config');
-const NailgunReporter = require('./nailgunReporter');
+const NailgunServer = require('./nailgunServer');
 
 const jasmine = new Jasmine();
 jasmine.loadConfig({
@@ -19,7 +19,6 @@ jasmine.loadConfig({
 });
 
 jasmine.addReporter(new NodeJasmineImageDiffTester(Config.imageDiff));
-jasmine.addReporter(new NailgunReporter());
 jasmine.addReporter(new JasmineSpecReporter.SpecReporter({
     displaySpecDuration: true,
     displayFailuresSummary: true,
@@ -30,6 +29,20 @@ jasmine.addReporter(new JasmineSpecReporter.SpecReporter({
 // Disable default dots reporter since we use jasmine-spec-reporter
 jasmine.configureDefaultReporter({
     print: () => {}
+});
+
+NailgunServer.startNailgun();
+
+jasmine.onComplete((passed) => {
+    NailgunServer.stopNailgun().then(() => {
+        // Exit only after nailgun has stopped
+        if(passed) {
+            process.exit(0);
+        }
+        else {
+            process.exit(1);
+        }
+    });
 });
 
 jasmine.execute();
