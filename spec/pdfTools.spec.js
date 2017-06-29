@@ -783,6 +783,15 @@ describe('tepez-pdf-tools', () => {
           Bluebird.map(_.range(0, expectedPagesNum), (pageNum) => {
 
             const pngStream = specUtil.pdfToPng(res, pageNum);
+            // the ImagemagickStream might multiple errors
+            // but StreamToArray removes the error listener after the first error
+            // so if add this listener so we won't get errors like:
+            //    events.js:160
+            //      throw er; // Unhandled 'error' event
+            // which will stop jasmine
+            pngStream.on('error', (err) => {
+              console.log(`Imagemagick error: ${err}`);
+            });
             return imageDiffTester.imageTaken(`${specOpts.name}-${pageNum}`, pngStream)
 
           }).then(() => {
