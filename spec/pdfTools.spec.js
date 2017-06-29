@@ -773,7 +773,11 @@ describe('tepez-pdf-tools', () => {
           const res = Buffer.concat(resBuffers);
           expect(err).toBe(null);
 
-          const resPath = Path.join(__dirname, 'results', specOpts.name + (useNailgun ? '-nailgun' : '') + '.pdf');
+          const resPath = Path.join(
+              __dirname,
+              'results',
+              specOpts.name + (useNailgun ? '-nailgun' : '') + '.pdf'
+          );
 
           let imageDiffTester = jasmine.getEnv().imageDiffTester;
 
@@ -798,7 +802,6 @@ describe('tepez-pdf-tools', () => {
             Fs.writeFileSync(resPath, res);
 
             if (specOpts.compareBytes) {
-
               const expected = expectedFiles[specOpts.expected || specOpts.name];
               const expectedByesMatchRate = specOpts.expectedByesMatchRate || 0.98;
 
