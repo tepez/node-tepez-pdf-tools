@@ -307,7 +307,7 @@ describe('tepez-pdf-tools', () => {
       {
         name: 'sourcePath',
         expected: 'textValid',
-        desc: 'when source is given using sourcePath',
+        desc: 'text - when source is given using sourcePath',
         data: [
           { type: 'text', key:'field1', value: 'value 1' },
           { type: 'text', key:'field2', value: 'value 2' }
@@ -318,7 +318,7 @@ describe('tepez-pdf-tools', () => {
       },
       {
         name: 'textValid',
-        desc: 'text - type is omitted',
+        desc: 'text - when source is given using sourceContent',
         data: [
           { type: 'text', key:'field1', value: 'value 1' },
           { type: 'text', key:'field2', value: 'value 2' }
