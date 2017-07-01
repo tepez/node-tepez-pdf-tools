@@ -141,7 +141,7 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
         sourceContent: spec.sourceFiles.image
       }; },
       data: [
-        { type: 'img',  key: 'image', path: specUtil.getAssetPath('img/image.png') }
+        { type: 'img',  key: 'image', path: specUtil.getAssetPath('img/image1.png') }
       ]
     },
     {
@@ -164,7 +164,7 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
       data: [
         {
           type: 'img',
-          path: specUtil.getAssetPath('img/image.png'),
+          path: specUtil.getAssetPath('img/image1.png'),
           placement: 'new-page',
           'max-width': 75
         },
@@ -219,7 +219,7 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
         sourceContent: spec.sourceFiles.blank
       }; },
       data: [
-        { type: 'attachment',  path: specUtil.getAssetPath('img/image.png') },
+        { type: 'attachment',  path: specUtil.getAssetPath('img/image1.png') },
         { type: 'attachment',  path: specUtil.getAssetPath('img/image2.jpg') }
       ]
     },
@@ -234,7 +234,7 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
       data: [
         {
           type: 'attachment',
-          path: specUtil.getAssetPath('img/image.png'),
+          path: specUtil.getAssetPath('img/image1.png'),
           desc: 'mock file description'
         },
         {
@@ -255,7 +255,7 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
       data: [
         {
           type: 'attachment',
-          path: specUtil.getAssetPath('img/image.png'),
+          path: specUtil.getAssetPath('img/image1.png'),
           fileDisplay: 'mockFileDisplay.png'
         },
         {
@@ -276,7 +276,7 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
       data: [
         {
           type: 'attachment',
-          path: specUtil.getAssetPath('img/image.png'),
+          path: specUtil.getAssetPath('img/image1.png'),
           fileDisplay: 'mockFileDisplay.png',
           desc: 'mock file description'
         },
