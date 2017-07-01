@@ -16,16 +16,69 @@ Bluebird.promisifyAll(Fs);
 exports = module.exports = {};
 
 // Remove and re-create the results directory
-exports.clearResultDirectory = function () {
+exports.clearResultDirectory = () => {
     const resultDirPath = Path.join(__dirname, 'results');
-    return RimrafAsync(resultDirPath).then(function () {
+    return RimrafAsync(resultDirPath).then(() => {
         return MkdirpAsync(resultDirPath);
     }).return();
 };
 
 // return the absolute path of an asset
-exports.getAssetPath = function (asset) {
-    return Path.join(__dirname, 'assets', asset)
+exports.getAssetPath = (asset) => Path.join(__dirname, 'assets', asset);
+
+exports.prepareSpecsAssets = () => {
+    let spec;
+
+    afterEach(() => spec = null);
+
+    beforeEach(function () {
+        spec = this;
+        spec.sourceFiles = sourceFiles;
+        spec.expectedFiles = expectedFiles;
+        spec.imageFiles = imageFiles;
+
+        // we'll use this file as log for tepez-pdf-tools
+        spec.logFilePath = Path.join(__dirname, '../tepez-pdf-tools.log');
+    });
+
+    let sourceFiles, expectedFiles, imageFiles;
+
+    beforeAll((done) => {
+        jasmine.getEnv().imageDiffTester.initDirectories().then(done, done.fail);
+    });
+
+    afterAll(() => {
+        sourceFiles = expectedFiles = imageFiles = null;
+    });
+
+    beforeAll((done) => {
+        exports.clearResultDirectory().then(done, done.fail);
+    });
+
+    // read source files
+    beforeAll((done) => {
+        exports.readDirectory('src').then((files) => {
+            sourceFiles = files;
+        }).then(done, done.fail);
+    });
+
+    // read expected files
+    beforeAll((done) => {
+        exports.readDirectory('expected').then((files) => {
+            expectedFiles = files;
+        }).then(done, done.fail);
+    });
+
+    // read image files
+    beforeAll((done) => {
+        exports.readDirectory('img').then((files) => {
+            // encode each image as base64
+            _.forEach(files, (contet, key) => {
+                files[key] = new Buffer(contet).toString('base64');
+            });
+            imageFiles = files;
+        }).then(done, done.fail);
+    });
 };
 
 // since there are some minor changes between the expected PDF files and the files we
