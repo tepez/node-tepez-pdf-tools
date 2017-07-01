@@ -67,34 +67,3 @@ exports.pdfToPng = function(pdfBuffer, page) {
     imagemagickStream.end(pdfBuffer);
     return imagemagickStream;
 };
-
-
-
-
-/**
- * The "a promise was created in a handler but none were returned from it" warning added in
- * bluebird 3 causes a false positive warning when using the following pattern in jasmine
- * specs:
- *
- *      it('should ...', (done) => {
- *          fn().then(done, done.fail);
- *      })
- *
- * This can be solved using this pattern
- *
- *      it('should ...', (done) => {
- *          fn().jasmineDone(done);
- *      })
- *
- *
- * http://bluebirdjs.com/docs/warning-explanations.html
- */
-Bluebird.prototype.jasmineDone = function(done) {
-    return this.then(function() {
-        done();
-        return null;
-    }, function(err) {
-        done.fail(err);
-        return null;
-    });
-};

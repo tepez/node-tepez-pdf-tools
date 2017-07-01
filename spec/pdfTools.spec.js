@@ -26,7 +26,7 @@ describe('tepez-pdf-tools', () => {
   let sourceFiles, expectedFiles, imageFiles;
 
   beforeAll((done) => {
-    jasmine.getEnv().imageDiffTester.initDirectories().jasmineDone(done);
+    jasmine.getEnv().imageDiffTester.initDirectories().then(done, done.fail);
   });
 
   afterAll(() => {
@@ -34,21 +34,21 @@ describe('tepez-pdf-tools', () => {
   });
 
   beforeAll((done) => {
-    specUtil.clearResultDirectory().jasmineDone(done);
+    specUtil.clearResultDirectory().then(done, done.fail);
   });
 
   // read source files
   beforeAll((done) => {
     specUtil.readDirectory('src').then((files) => {
       sourceFiles = files;
-    }).jasmineDone(done);
+    }).then(done, done.fail);
   });
 
   // read expected files
   beforeAll((done) => {
     specUtil.readDirectory('expected').then((files) => {
       expectedFiles = files;
-    }).jasmineDone(done);
+    }).then(done, done.fail);
   });
 
   // read image files
@@ -59,7 +59,7 @@ describe('tepez-pdf-tools', () => {
         files[key] = new Buffer(contet).toString('base64');
       });
       imageFiles = files;
-    }).jasmineDone(done);
+    }).then(done, done.fail);
   });
 
   describe('options', () => {
@@ -821,7 +821,7 @@ describe('tepez-pdf-tools', () => {
               expect(res.length).toBe(expected ? expected.length : -1);
               expect(matchRate).toBeGreaterThan(expectedByesMatchRate);
             }
-          }).jasmineDone(done);
+          }).then(done, done.fail);
         });
 
         stdout.on('data',(buffer) => {
@@ -845,7 +845,7 @@ describe('tepez-pdf-tools', () => {
               spec.dataFilePath = path;
               Fs.writeSync(fd, JSON.stringify(data));
               Fs.closeSync(fd);
-            }).delay(1000).jasmineDone(done);
+            }).delay(1000).then(done, done.fail);
           } else {
             done();
           }
