@@ -30,6 +30,7 @@ function pdfTools(options, callback) {
         logLevel: Joi.string().only('SEVERE', 'WARNING', 'INFO', 'CONFIG', 'FINE', 'FINER', 'FINEST'),
         getFields: Joi.boolean(),
         getAttachments: Joi.boolean(),
+        getSignatures: Joi.boolean(),
         watermark: Joi.object().keys({
           text: Joi.string().required(),
           rotation: Joi.number().integer().min(0).max(360),
@@ -79,6 +80,8 @@ function pdfTools(options, callback) {
     args.push('--print-fields');
   } else if (options.getAttachments) {
     args.push('--report-attachments');
+  } else if (options.getSignatures) {
+    args.push('--report-signatures');
   } else {
     args.push('--destination', '-');
     [ 'font', 'cert', 'certpass', 'certformat', 'data', 'language' ].forEach((key) => {
@@ -159,7 +162,7 @@ function pdfTools(options, callback) {
 
       stream.pipe(csvParser);
     });
-  } else if (options.getAttachments) {
+  } else if (options.getAttachments || options.getSignatures) {
     return new Promise((resolve, reject) => {
       let json = '';
       stream.on('data', (data) => { json += data.toString() });
