@@ -29,6 +29,7 @@ function pdfTools(options, callback) {
         logFile: Joi.string(),
         logLevel: Joi.string().only('SEVERE', 'WARNING', 'INFO', 'CONFIG', 'FINE', 'FINER', 'FINEST'),
         getFields: Joi.boolean(),
+        getAttachments: Joi.boolean(),
         watermark: Joi.object().keys({
           text: Joi.string().required(),
           rotation: Joi.number().integer().min(0).max(360),
@@ -76,6 +77,8 @@ function pdfTools(options, callback) {
 
   if (options.getFields) {
     args.push('--print-fields');
+  } else if (options.getAttachments) {
+    args.push('--report-attachments');
   } else {
     args.push('--destination', '-');
     [ 'font', 'cert', 'certpass', 'certformat', 'data', 'language' ].forEach((key) => {
@@ -128,6 +131,11 @@ function pdfTools(options, callback) {
     handleError(new Error((err || '').toString().trim()));
   });
 
+
+  if (options.sourceContent) {
+    child.stdin.end(options.sourceContent);
+  }
+
   if (options.getFields) {
     return new Promise((resolve, reject) => {
       const fields = [];
@@ -150,17 +158,17 @@ function pdfTools(options, callback) {
       });
 
       stream.pipe(csvParser);
-
-      // write the content to stdin
-      if (options.sourceContent) {
-        child.stdin.end(options.sourceContent);
-      }
+    });
+  } else if (options.getAttachments) {
+    return new Promise((resolve, reject) => {
+      let json = '';
+      stream.on('data', (data) => { json += data.toString() });
+      stream.on('end', () => {
+        resolve(JSON.parse(json));
+      });
+      stream.on('error', reject);
     });
   } else {
-    // write the content to stdin
-    if (options.sourceContent) {
-      child.stdin.end(options.sourceContent);
-    }
 
     // return stdout stream so we can pipe
     return stream;
