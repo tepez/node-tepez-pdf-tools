@@ -21,14 +21,14 @@ describe('tepez-pdf-tools, get attachments', () => {
     describe('when there are no attachments', () => {
       beforeEach(() => spec.expectedAttachments = []);
 
-      it('should resolve to an empty when using sourceContent', (done) => {
+      it('should resolve to an empty array when using sourceContent', (done) => {
         spec.pdfToolsOpts.sourceContent = spec.sourceFiles.blank;
 
         spec.testGetAttachments().then(done, done.fail);
       });
 
       it('should resolve to an empty array when using sourcePath', (done) => {
-        spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/text.pdf');
+        spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/blank.pdf');
 
         spec.testGetAttachments().then(done, done.fail);
       });
@@ -56,13 +56,13 @@ describe('tepez-pdf-tools, get attachments', () => {
         }
       ]);
 
-      it('should resolve to an empty when using sourceContent', (done) => {
+      it('should resolve to attachments list when using sourceContent', (done) => {
         spec.pdfToolsOpts.sourceContent = spec.sourceFiles.attachments;
 
         spec.testGetAttachments().then(done, done.fail);
       });
 
-      it('should resolve to an empty array when using sourcePath', (done) => {
+      it('should resolve to attachments list empty array when using sourcePath', (done) => {
         spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/attachments.pdf');
 
         spec.testGetAttachments().then(done, done.fail);
