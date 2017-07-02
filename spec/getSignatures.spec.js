@@ -12,6 +12,7 @@ describe('tepez-pdf-tools, get signatures', () => {
     });
 
     specUtil.prepareSpecsAssets();
+    specUtil.setJasmineTimeout(30000);
 
     beforeEach(() => {
         spec.pdfTools = require('..');

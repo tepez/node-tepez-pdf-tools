@@ -12,6 +12,7 @@ describe('tepez-pdf-tools, generating PDF fields report', () => {
   });
 
   specUtil.prepareSpecsAssets();
+  specUtil.setJasmineTimeout(30000);
 
   beforeEach(() => {
     spec.pdfTools = require('..');

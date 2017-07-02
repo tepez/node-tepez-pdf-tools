@@ -89,3 +89,16 @@ exports.pdfToPng = function(pdfBuffer, page) {
     imagemagickStream.end(pdfBuffer);
     return imagemagickStream;
 };
+
+exports.setJasmineTimeout = (timeout) => {
+    beforeEach(() => {
+        const spec = this;
+        spec.origDefaultTimeoutInterval = jasmine.DEFAULT_TIMEOUT_INTERVAL;
+        jasmine.DEFAULT_TIMEOUT_INTERVAL = timeout;
+    });
+
+    afterEach(() => {
+        const spec = this;
+        jasmine.DEFAULT_TIMEOUT_INTERVAL = spec.origDefaultTimeoutInterval;
+    });
+};

@@ -28,15 +28,7 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
   });
 
   specUtil.prepareSpecsAssets();
-
-  beforeEach(() => {
-    spec.origDefaultTimeoutInterval = jasmine.DEFAULT_TIMEOUT_INTERVAL;
-    jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
-  });
-
-  afterEach(() => {
-    jasmine.DEFAULT_TIMEOUT_INTERVAL = spec.origDefaultTimeoutInterval;
-  });
+  specUtil.setJasmineTimeout(30000);
 
   beforeEach(() => {
     spec.pdfTools = require('..');

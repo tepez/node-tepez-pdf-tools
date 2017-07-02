@@ -12,6 +12,7 @@ describe('tepez-pdf-tools, get attachments', () => {
   });
 
   specUtil.prepareSpecsAssets();
+  specUtil.setJasmineTimeout(10000);
 
   beforeEach(() => {
     spec.pdfTools = require('..');
