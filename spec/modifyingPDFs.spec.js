@@ -615,7 +615,7 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
 
       it('should NOT sign the file when cert is not given', (done) => {
         spec.expectedSignatures = [];
-        modifyPdfAndTest('signature_no_signature', 1).then(() => {
+        modifyPdf('signature_no_signature').then(() => {
           return testSignatures();
         }).then(done, done.fail);
       });
@@ -629,7 +629,7 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
         spec.pdfToolsOpts.cert = specUtil.getAssetPath('certificate.pfx');
         spec.pdfToolsOpts.certpass = 'password';
         spec.pdfToolsOpts.certformat = 'pkcs12';
-        modifyPdfAndTest('signature_signature_1', 1).then(() => {
+        modifyPdf('signature_signature_1').then(() => {
           return testSignatures();
         }).then(done, done.fail);
       });
@@ -642,7 +642,7 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
         ];
         spec.pdfToolsOpts.cert = specUtil.getAssetPath('certificate.pfx');
         spec.pdfToolsOpts.certpass = 'password';
-        modifyPdfAndTest('signature_signature_no_certformat', 1).then(() => {
+        modifyPdf('signature_signature_no_certformat').then(() => {
           return testSignatures();
         }).then(done, done.fail);
       });
