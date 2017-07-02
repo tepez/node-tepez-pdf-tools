@@ -10,7 +10,6 @@ const Joi = require('joi');
 
 Bluebird.promisifyAll(Tmp,{multiArgs: true});
 
-
 describe('tepez-pdf-tools, modifying PDF files', () => {
   let spec;
 
@@ -18,6 +17,14 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
 
   beforeEach(function () {
     spec = this;
+  });
+
+  beforeAll((done) => {
+    jasmine.getEnv().imageDiffTester.initDirectories().then(done, done.fail);
+  });
+
+  beforeAll((done) => {
+    specUtil.clearResultDirectory().then(done, done.fail);
   });
 
   specUtil.prepareSpecsAssets();
@@ -33,564 +40,612 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
 
   beforeEach(() => {
     spec.pdfTools = require('..');
+
+    spec.pdfToolsOpts = {
+      logLevel: 'INFO',
+      logFile: spec.logFilePath
+    };
+    
+    spec.pdfToolsData = null;
   });
 
-  [
-    {
-      name: 'sourcePath',
-      expected: 'textValid',
-      desc: 'text - when source is given using sourcePath',
-      data: [
-        { type: 'text', key:'field1', value: 'value 1' },
-        { type: 'text', key:'field2', value: 'value 2' }
-      ],
-      options: () => { return {
-        sourcePath: specUtil.getAssetPath('src/text.pdf')
-      }; }
-    },
-    {
-      name: 'textValid',
-      desc: 'text - when source is given using sourceContent',
-      data: [
-        { type: 'text', key:'field1', value: 'value 1' },
-        { type: 'text', key:'field2', value: 'value 2' }
-      ],
-      options: () => { return {
-        sourceContent: spec.sourceFiles.text
-      }; }
-    },
-    {
-      name: 'textOmittedType',
-      expected: 'textValid',
-      desc: 'text - type is omitted (text is default type)',
-      data: [
-        { key:'field1', value: 'value 1' },
-        { key:'field2', value: 'value 2' }
-      ],
-      options: () => { return {
-        sourceContent: spec.sourceFiles.text
-      }; }
-    },
-    {
-      name: 'textWrongType',
-      expected: 'textNoValue',
-      desc: 'text - wrong type (checkbox instead of text)',
-      data: [
-        { type: 'checkbox', key:'field1', value: true },
-        { type: 'checkbox', key:'field2', value: 'xxx' }
-      ],
-      options: () => { return {
-        sourceContent: spec.sourceFiles.text
-      }; }
-    },
-    {
-      name: 'textNoValue',
-      desc: 'text - no value',
-      data: [],
-      options: () => { return {
-        sourceContent: spec.sourceFiles.text
-      }; }
-    },
-    {
-      name: 'checkboxChecked',
-      desc: 'checkbox - checked',
-      data: [ { type: 'checkbox', key:'checkbox', value: true } ],
-      options: () => { return {
-        sourceContent: spec.sourceFiles.checkbox
-      }; }
-    },
-    {
-      name: 'checkboxNotChecked',
-      desc: 'checkbox - not checked',
-      data: [ { type: 'checkbox', key:'checkbox', value: false } ],
-      options: () => { return {
-        sourceContent: spec.sourceFiles.checkbox
-      }; }
-    },
-    {
-      name: 'checkboxWrongType',
-      expected: 'checkboxNotChecked',
-      desc: 'checkbox - wrong type (text instead of checkbox)',
-      data: [ { type: 'text', key:'checkbox', value: 'xxx' } ],
-      options: () => { return {
-        sourceContent: spec.sourceFiles.checkbox
-      }; }
-    },
-    {
-      name: 'checkboxInvalidValue',
-      expected: 'checkboxNotChecked',
-      desc: 'checkbox - invalid value (string instead of true/false)',
-      data: [ { type: 'checkbox', key:'checkbox', value: 'xxx' } ],
-      options: () => { return {
-        sourceContent: spec.sourceFiles.checkbox
-      }; }
-    },
-    {
-      name: 'checkboxNoValue',
-      expected: 'checkboxNotChecked',
-      desc: 'checkbox - no value',
-      data: [],
-      options: () => { return {
-        sourceContent: spec.sourceFiles.checkbox
-      }; }
-    },
-    {
-      name: 'imagePath',
-      desc: 'image by path',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.image
-      }; },
-      data: [
-        { type: 'img',  key: 'image', path: specUtil.getAssetPath('img/image1.png') }
-      ]
-    },
-    {
-      name: 'imageContent',
-      desc: 'image by content',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.image
-      }; },
-      data: () => { return [
-        { type: 'img',  key: 'image', content: spec.imageFiles.image2 }
-      ]; }
-    },
-    {
-      name: 'imageNewPagePath',
-      desc: 'image by path on a new page',
-      expectedPagesNum: 4,
-      options: () => { return {
-        sourceContent: spec.sourceFiles.blank
-      }; },
-      data: [
-        {
-          type: 'img',
-          path: specUtil.getAssetPath('img/image1.png'),
-          placement: 'new-page',
-          'max-width': 75
-        },
-        {
-          type: 'img',
-          path: specUtil.getAssetPath('img/image2.jpg'),
-          placement: 'new-page'
-          // max-width should default to 0.5
-        },
-        {
-          type: 'img',
-          path: specUtil.getAssetPath('img/image3.gif'),
-          placement: 'new-page',
-          'max-width': 25
-        }
-      ]
-    },
-    {
-      name: 'imageNewPageContent',
-      desc: 'image by content on a new page',
-      expectedPagesNum: 4,
-      options: () => { return {
-        sourceContent: spec.sourceFiles.blank
-      }; },
-      data: () => { return [
-        {
-          type: 'img',
-          content: spec.imageFiles.image,
-          placement: 'new-page',
-          'max-width': 75
-        },
-        {
-          type: 'img',
-          content: spec.imageFiles.image2,
-          placement: 'new-page'
-          // max-width should default to 0.5
-        },
-        {
-          type: 'img',
-          content: spec.imageFiles.image3,
-          placement: 'new-page',
-          'max-width': 25
-        }
-      ]; }
-    },
-    {
-      name: 'attachmentPath',
-      desc: 'attachment by path (no desc and no fileDisplay)',
-      compareBytes: true,
-      expectedByesMatchRate: 0.997,
-      options: () => { return {
-        sourceContent: spec.sourceFiles.blank
-      }; },
-      data: [
-        { type: 'attachment',  path: specUtil.getAssetPath('img/image1.png') },
-        { type: 'attachment',  path: specUtil.getAssetPath('img/image2.jpg') }
-      ]
-    },
-    {
-      name: 'attachmentPathDesc',
-      compareBytes: true,
-      expectedByesMatchRate: 0.98,
-      desc: 'attachment by path, with desc (no fileDisplay)',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.blank
-      }; },
-      data: [
-        {
-          type: 'attachment',
-          path: specUtil.getAssetPath('img/image1.png'),
-          desc: 'mock file description'
-        },
-        {
-          type: 'attachment',
-          path: specUtil.getAssetPath('img/image2.jpg'),
-          desc: 'mock file description 2'
-        }
-      ]
-    },
-    {
-      name: 'attachmentPathFileDisplay',
-      compareBytes: true,
-      expectedByesMatchRate: 0.98,
-      desc: 'attachment by path, with fileDisplay (no desc)',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.blank
-      }; },
-      data: [
-        {
-          type: 'attachment',
-          path: specUtil.getAssetPath('img/image1.png'),
-          fileDisplay: 'mockFileDisplay.png'
-        },
-        {
-          type: 'attachment',
-          path: specUtil.getAssetPath('img/image2.jpg'),
-          fileDisplay: 'mockFileDisplay.jpg'
-        }
-      ]
-    },
-    {
-      name: 'attachmentPathDescFileDisplay',
-      compareBytes: true,
-      expectedByesMatchRate: 0.98,
-      desc: 'attachment by path, with fileDisplay and desc',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.blank
-      }; },
-      data: [
-        {
-          type: 'attachment',
-          path: specUtil.getAssetPath('img/image1.png'),
-          fileDisplay: 'mockFileDisplay.png',
-          desc: 'mock file description'
-        },
-        {
-          type: 'attachment',
-          path: specUtil.getAssetPath('img/image2.jpg'),
-          fileDisplay: 'mockFileDisplay.jpg',
-          desc: 'mock file description 2'
-        }
-      ]
-    },
-    {
-      name: 'attachmentContent',
-      compareBytes: true,
-      expectedByesMatchRate: 0.996,
-      desc: 'attachment by content (no desc and no fileDisplay) - should skip field since we cannot determine a displayName',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.blank
-      }; },
-      data: () => { return [ {
-        type: 'attachment',
-        content: spec.imageFiles.image
-      } ]; }
-    },
-    {
-      name: 'attachmentContentDesc',
-      compareBytes: true,
-      expectedByesMatchRate: 0.996,
-      desc: 'attachment by content, with desc (no fileDisplay) - should skip field since we cannot determine a displayName',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.blank
-      }; },
-      data: () => { return [ {
-        type: 'attachment',
-        content: spec.imageFiles.image,
-        desc: 'mock file description'
-      } ]; }
-    },
-    {
-      name: 'attachmentContentFileDisplay',
-      compareBytes: true,
-      expectedByesMatchRate: 0.98,
-      desc: 'attachment by content, with fileDisplay (no desc)',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.blank
-      }; },
-      data: () => { return [ {
-        type: 'attachment',
-        content: spec.imageFiles.image,
-        fileDisplay: 'mockFileDisplay.png'
-      } ]; }
-    },
-    {
-      name: 'attachmentContentDescFileDisplay',
-      compareBytes: true,
-      expectedByesMatchRate: 0.98,
-      desc: 'attachment by content, with fileDisplay and desc',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.blank
-      }; },
-      data: () => { return [ {
-        type: 'attachment',
-        content: spec.imageFiles.image,
-        fileDisplay: 'mockFileDisplay.png',
-        desc: 'mock file description'
-      } ]; }
-    },
-    {
-      name: 'signed',
-      compareBytes: true,
-      expectedByesMatchRate: 0.98,
-      desc: 'should digitally sign file with certificate at cert',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.text,
-        cert: specUtil.getAssetPath('certificate.pfx'),
-        certpass: 'password',
-        certformat: 'pkcs12'
-      }; },
-      data: [
-        { type: 'text', key:'field1', value: 'value 1' },
-        { type: 'text', key:'field2', value: 'value 2' }
-      ]
-    },
-    {
-      name: 'signedNoCertFormat',
-      expected: 'signed',
-      compareBytes: true,
-      expectedByesMatchRate: 0.98,
-      desc: 'certformat should default to pkcs12',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.text,
-        cert: specUtil.getAssetPath('certificate.pfx'),
-        certpass: 'password'
-      }; },
-      data: [
-        { type: 'text', key:'field1', value: 'value 1' },
-        { type: 'text', key:'field2', value: 'value 2' }
-      ]
-    },
-    {
-      name: 'fontPath',
-      desc: 'should use font as path for substitution font',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.text,
-        // font downloaded from http://www.cunliffethompson.com/font/download.html
-        font: specUtil.getAssetPath('shuneet_03_book_v21.OTF')
-      }; },
-      data: [
-        { type: 'text', key:'field1', value: 'בלה בלה בלה' },
-        { type: 'text', key:'field2', value: 'ידה ידה ידה' }
-      ]
-    },
-    {
-      name: 'fontEmbedded',
-      desc: 'when font is arialuni.ttf, should use arialuni.ttf embedded in jar',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.text,
-        font: 'arialuni.ttf'
-      }; },
-      data: [
-        { type: 'text', key:'field1', value: 'בלה בלה בלה' },
-        { type: 'text', key:'field2', value: 'ידה ידה ידה' }
-      ]
-    },
-    {
-      name: 'watermarkHe',
-      desc: 'watermark in Hebrew with default options',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.blank,
-        watermark: {
-          text: 'אחת שתיים שלוש'
-        },
-        font: 'arialuni.ttf'
-      }; }
-    },
-    {
-      name: 'watermarkHeOpacity25Rotation0FontSize24',
-      desc: 'watermark in Hebrew with custom options',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.blank,
-        watermark: {
-          text: 'אחת שתיים שלוש',
-          opacity: 25,
-          rotation: 0,
-          fontSize: 24
-        },
-        font: 'arialuni.ttf'
-      }; }
-    },
-    {
-      name: 'watermarkEn',
-      desc: 'watermark in English with default options',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.blank,
-        watermark: {
-          text: 'One Two Three'
-        }
-      }; }
-    },
-    {
-      name: 'watermarkHeCustomOpacity25Rotation0FontSize24',
-      desc: 'watermark in English with custom options',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.blank,
-        watermark: {
-          text: 'One Two Three',
-          opacity: 25,
-          rotation: 0,
-          fontSize: 24
-        }
-      }; }
-    },
-    {
-      name: 'watermarkEnHe',
-      desc: 'watermark in English and Hebrew (English first) with default options',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.blank,
-        watermark: {
-          text: 'One Two Three אחת שתיים שלוש'
-        },
-        font: 'arialuni.ttf'
-      }; }
-    },
-    {
-      name: 'watermarkHeEn',
-      desc: 'watermark in Hebrew and English  (Hebrew first) with default options',
-      options: () => { return {
-        sourceContent: spec.sourceFiles.blank,
-        watermark: {
-          text: 'אחת שתיים שלוש One Two Three'
-        },
-        font: 'arialuni.ttf'
-      }; }
-    }
-  ].forEach((specOpts, specIdx) => {
-    Joi.assert(specOpts, Joi.object().keys({
-      name: Joi.string().required(),
-      expected: Joi.string().optional(),
-      desc: Joi.string().required(),
-      fit: Joi.boolean().strict(),
-      compareBytes: Joi.boolean(),
-      expectedByesMatchRate: Joi.number().min(0.98).max(1),
-      expectedPagesNum: Joi.number().integer().min(1),
-      options: Joi.func().required(),
-      data: Joi.alternatives().try(
-          Joi.array(),
-          Joi.func()
-      ).optional()
-    }));
+  // Create a temporary file with the field data
+  const initPdfToolsData = () => {
+    if (!spec.pdfToolsData) return Bluebird.resolve();
+    
+    return Tmp.fileAsync('tepez-pdf-tools-test').spread((path, fd) => {
+      spec.dataFilePath = path;
+      Fs.writeSync(fd, JSON.stringify(spec.pdfToolsData));
+      Fs.closeSync(fd);
 
-    function runTest(useNailgun, done) {
-      const resBuffers = [];
+      spec.pdfToolsOpts.data = spec.dataFilePath;
+    }).delay(1000);
+  };
 
-      const pdfToolsOptions = {
-        nailgun: useNailgun,
-        logLevel: 'INFO',
-        logFile: spec.logFilePath
-      };
-      if (spec.dataFilePath) pdfToolsOptions.data = spec.dataFilePath;
+  const modifyPdfAndTest = (name, expectedPagesNum) => {
+    return initPdfToolsData().then(() => {
+      return new Promise((resolve, reject) => {
+        const resBuffers = [];
 
-      if (specOpts.options) {
-        _.assign(pdfToolsOptions, specOpts.options());
-      }
+        const stdout = spec.pdfTools(spec.pdfToolsOpts, (err) => {
+          const res = Buffer.concat(resBuffers);
+          spec.resultPdf = res;
+          expect(err).toBe(null);
 
-      const stdout = spec.pdfTools(pdfToolsOptions, (err) => {
-        const res = Buffer.concat(resBuffers);
-        expect(err).toBe(null);
-
-        const resPath = Path.join(
-            __dirname,
-            'results',
-            specOpts.name + (useNailgun ? '-nailgun' : '') + '.pdf'
-        );
-
-        let imageDiffTester = jasmine.getEnv().imageDiffTester;
-
-        const expectedPagesNum = specOpts.expectedPagesNum || 1;
-
-        // Take each page of the PDF as a separate image
-        Bluebird.map(_.range(0, expectedPagesNum), (pageNum) => {
-
-          const pngStream = specUtil.pdfToPng(res, pageNum);
-          // the ImagemagickStream might multiple errors
-          // but StreamToArray removes the error listener after the first error
-          // so if add this listener so we won't get errors like:
-          //    events.js:160
-          //      throw er; // Unhandled 'error' event
-          // which will stop jasmine
-          pngStream.on('error', (err) => {
-            console.log(`Imagemagick error: ${err}`);
-          });
-          return imageDiffTester.imageTaken(`${specOpts.name}-${pageNum}`, pngStream)
-
-        }).then(() => {
+          const resPath = Path.join(
+              __dirname,
+              'results',
+              name + (spec.pdfToolsOpts.nailgun ? '-nailgun' : '') + '.pdf'
+          );
           Fs.writeFileSync(resPath, res);
 
-          if (specOpts.compareBytes) {
-            const expected = spec.expectedFiles[specOpts.expected || specOpts.name];
-            const expectedByesMatchRate = specOpts.expectedByesMatchRate || 0.98;
+          let imageDiffTester = jasmine.getEnv().imageDiffTester;
 
-            // check how much the expected and the result files are common
-            const matchRate = specUtil.getMatchRate(res, expected);
+          // Take each page of the PDF as a separate image
+          Bluebird.map(_.range(0, expectedPagesNum), (pageNum) => {
 
-            //console.log(matchRate);
+            const pngStream = specUtil.pdfToPng(res, pageNum);
+            // the ImagemagickStream might multiple errors
+            // but StreamToArray removes the error listener after the first error
+            // so if add this listener so we won't get errors like:
+            //    events.js:160
+            //      throw er; // Unhandled 'error' event
+            // which will stop jasmine
+            pngStream.on('error', (err) => {
+              console.log(`Imagemagick error: ${err}`);
+            });
+            return imageDiffTester.imageTaken(`${name}-${pageNum}`, pngStream)
 
-            // if not almost identical (except for dates that change every time we generate)
-            // write the file that we got so we can inspect it
-            if (matchRate <= expectedByesMatchRate) {
-              console.log(`Check out ${resPath} to figure out what is wrong with it`);
+          }).then(() => {
+            return spec.pdfTools({
+              sourceContent: res,
+              getAttachments: true
+            });
+          }).then((attachments) => {
+            expect(attachments).toEqual(spec.expectedAttachments || []);
+          }).then(resolve, reject);
+        });
+
+        stdout.on('data',(buffer) => {
+          resBuffers.push(buffer);
+        });
+      });
+    });
+  };
+
+  const runSpecs = () => {
+    describe('text fields', () => {
+      describe('when type is "text"', () => {
+        beforeEach(() => {
+          spec.pdfToolsData = [
+            { type: 'text', key:'field1', value: 'value 1' },
+            { type: 'text', key:'field2', value: 'value 2' }
+          ];
+        });
+
+        it('should fill text fields when using sourcePath', (done) => {
+          spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/text.pdf');
+          modifyPdfAndTest('text_valid_source_path', 1).then(done, done.fail);
+        });
+
+        it('should fill text fields when using sourceContent', (done) => {
+          spec.pdfToolsOpts.sourceContent = spec.sourceFiles.text;
+          modifyPdfAndTest('text_valid_source_content', 1).then(done, done.fail);
+        });
+      });
+
+      describe('when type is NOT given', () => {
+        beforeEach(() => {
+          spec.pdfToolsData = [
+            { key:'field1', value: 'value 1' },
+            { key:'field2', value: 'value 1' }
+          ];
+        });
+
+        it('should fill text fields when using sourcePath', (done) => {
+          spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/text.pdf');
+          modifyPdfAndTest('text_no_type_source_path', 1).then(done, done.fail);
+        });
+
+        it('should fill text fields when using sourceContent', (done) => {
+          spec.pdfToolsOpts.sourceContent = spec.sourceFiles.text;
+          modifyPdfAndTest('text_no_type_source_content', 1).then(done, done.fail);
+        });
+      });
+
+      describe('when type is invalid', () => {
+        beforeEach(() => {
+          spec.pdfToolsData = [
+            { type: 'xxx', key:'field1', value: 'value 1' },
+            { type: [ 'text' ], key:'field1', value: 'value 1' },
+            { type: { xxx: 'text' }, key:'field1', value: 'value 1' },
+            { type: true, key:'field2', value: 'value 2' }
+          ];
+        });
+
+        it('should fill text fields when using sourcePath', (done) => {
+          spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/text.pdf');
+          modifyPdfAndTest('text_invalid_type_source_path', 1).then(done, done.fail);
+        });
+
+        it('should fill text fields when using sourceContent', (done) => {
+          spec.pdfToolsOpts.sourceContent = spec.sourceFiles.text;
+          modifyPdfAndTest('text_invalid_type_source_content', 1).then(done, done.fail);
+        });
+      });
+
+      describe('when type is value is not given or null', () => {
+        beforeEach(() => {
+          spec.pdfToolsData = [
+            { type: 'text', key:'field1' },
+            { type: 'text', key:'field2', value: null }
+          ];
+        });
+
+        it('should fill text fields when using sourcePath', (done) => {
+          spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/text.pdf');
+          modifyPdfAndTest('text_no_value_source_path', 1).then(done, done.fail);
+        });
+
+        it('should fill text fields when using sourceContent', (done) => {
+          spec.pdfToolsOpts.sourceContent = spec.sourceFiles.text;
+          modifyPdfAndTest('text_no_value_source_content', 1).then(done, done.fail);
+        });
+      });
+    });
+
+    describe('checkbox field', () => {
+      describe('when value=true', () => {
+        beforeEach(() => {
+          spec.pdfToolsData = [
+            { type: 'checkbox', key:'checkbox', value: true }
+          ];
+        });
+
+        it('should check field when using sourcePath', (done) => {
+          spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/checkbox.pdf');
+          modifyPdfAndTest('checkbox_checked_source_path', 1).then(done, done.fail);
+        });
+
+        it('should check field when using sourceContent', (done) => {
+          spec.pdfToolsOpts.sourceContent = spec.sourceFiles.checkbox;
+          modifyPdfAndTest('checkbox_checked_source_content', 1).then(done, done.fail);
+        });
+      });
+
+      describe('when value=false', () => {
+        beforeEach(() => {
+          spec.pdfToolsData = [
+            { type: 'checkbox', key:'checkbox', value: false }
+          ];
+        });
+
+        it('should check field when using sourcePath', (done) => {
+          spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/checkbox.pdf');
+          modifyPdfAndTest('checkbox_not_checked_source_path', 1).then(done, done.fail);
+        });
+
+        it('should check field when using sourceContent', (done) => {
+          spec.pdfToolsOpts.sourceContent = spec.sourceFiles.checkbox;
+          modifyPdfAndTest('checkbox_not_checked_source_content', 1).then(done, done.fail);
+        });
+      });
+
+      describe('when type is "text" (wrong type)', () => {
+        beforeEach(() => {
+          spec.pdfToolsData = [
+            { type: 'text', key:'checkbox', value: false }
+          ];
+        });
+
+        it('should check field when using sourcePath', (done) => {
+          spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/checkbox.pdf');
+          modifyPdfAndTest('checkbox_wrong_type_source_path', 1).then(done, done.fail);
+        });
+
+        it('should check field when using sourceContent', (done) => {
+          spec.pdfToolsOpts.sourceContent = spec.sourceFiles.checkbox;
+          modifyPdfAndTest('checkbox_wrong_type_source_content', 1).then(done, done.fail);
+        });
+      });
+
+      describe('when value is not given', () => {
+        beforeEach(() => {
+          spec.pdfToolsData = [
+            { type: 'checkbox', key:'checkbox' }
+          ];
+        });
+
+        it('should check field when using sourcePath', (done) => {
+          spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/checkbox.pdf');
+          modifyPdfAndTest('checkbox_no_value_source_path', 1).then(done, done.fail);
+        });
+
+        it('should check field when using sourceContent', (done) => {
+          spec.pdfToolsOpts.sourceContent = spec.sourceFiles.checkbox;
+          modifyPdfAndTest('checkbox_no_value_source_content', 1).then(done, done.fail);
+        });
+      });
+
+      describe('when value is not null', () => {
+        beforeEach(() => {
+          spec.pdfToolsData = [
+            { type: 'checkbox', key:'checkbox', value: null }
+          ];
+        });
+
+        it('should check field when using sourcePath', (done) => {
+          spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/checkbox.pdf');
+          modifyPdfAndTest('checkbox_null_value_source_path', 1).then(done, done.fail);
+        });
+
+        it('should check field when using sourceContent', (done) => {
+          spec.pdfToolsOpts.sourceContent = spec.sourceFiles.checkbox;
+          modifyPdfAndTest('checkbox_null_value_source_content', 1).then(done, done.fail);
+        });
+      });
+    });
+
+    describe('images', () => {
+      describe('when should be added on field', () => {
+        describe('when given using path', () => {
+          beforeEach(() => {
+            spec.pdfToolsData = [
+              { type: 'img',  key: 'image', path: specUtil.getAssetPath('img/image1.png') }
+            ];
+          });
+
+          it('should add image on top of field when using sourcePath', (done) => {
+            spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/image.pdf');
+            modifyPdfAndTest('image_on_field_by_path_source_path', 1).then(done, done.fail);
+          });
+
+          it('should add image on top of field when using sourceContent', (done) => {
+            spec.pdfToolsOpts.sourceContent = spec.sourceFiles.image;
+            modifyPdfAndTest('image_on_field_by_path_source_content', 1).then(done, done.fail);
+          });
+        });
+
+        describe('when given using content', () => {
+          beforeEach(() => {
+            spec.pdfToolsData = [
+              { type: 'img',  key: 'image', content: spec.imageFiles.image2 }
+            ];
+          });
+
+          it('should add image on top of field when using sourcePath', (done) => {
+            spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/image.pdf');
+            modifyPdfAndTest('image_on_field_by_content_source_path', 1).then(done, done.fail);
+          });
+
+          it('should add image on top of field when using sourceContent', (done) => {
+            spec.pdfToolsOpts.sourceContent = spec.sourceFiles.image;
+            modifyPdfAndTest('image_on_field_by_content_source_content', 1).then(done, done.fail);
+          });
+        });
+      });
+
+      describe('when should be added on new-page', () => {
+        beforeEach(() => {
+          spec.pdfToolsData = [
+            {
+              type: 'img',
+              path: specUtil.getAssetPath('img/image1.png'),
+              placement: 'new-page',
+              'max-width': 75
+            },
+            {
+              type: 'img',
+              path: specUtil.getAssetPath('img/image2.jpg'),
+              placement: 'new-page'
+              // max-width should default to 0.5
+            },
+            {
+              type: 'img',
+              path: specUtil.getAssetPath('img/image3.gif'),
+              placement: 'new-page',
+              'max-width': 25
             }
+          ];
+        });
 
-            // it's important not to do the expectations before, because that would raise an
-            // error and we won't have the pdf file in the result dir to inspect
-            expect(res.length).toBe(expected ? expected.length : -1);
-            expect(matchRate).toBeGreaterThan(expectedByesMatchRate);
+        it('should add images on new pages when using sourcePath', (done) => {
+          spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/image.pdf');
+          modifyPdfAndTest('image_new_page_source_path', 4).then(done, done.fail);
+        });
+
+        it('should add images on new pages when using sourceContent', (done) => {
+          spec.pdfToolsOpts.sourceContent = spec.sourceFiles.image;
+          modifyPdfAndTest('image_new_page_source_content', 4).then(done, done.fail);
+        });
+      });
+    });
+
+    describe('attachments', () => {
+      beforeEach(() => {
+        spec.expectedAttachments = [
+          {
+            content: spec.imageFiles.image1,
+            desc: '',
+            filename: 'image1.png',
+            size: 59224
+          },
+          {
+            content: spec.imageFiles.image2,
+            desc: '',
+            filename: 'image2.jpg',
+            size: 11428
           }
+        ];
+      });
+
+      describe('when given using path', () => {
+        beforeEach(() => {
+          spec.pdfToolsData = [
+            {
+              type: 'attachment',
+              path: specUtil.getAssetPath('img/image1.png')
+            },
+            {
+              type: 'attachment',
+              path: specUtil.getAssetPath('img/image2.jpg')
+            }
+          ];
+        });
+
+        describe('no fileDisplay or desc', () => {
+          it('should add attachments when using sourcePath', (done) => {
+            spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/blank.pdf');
+            modifyPdfAndTest('attachment_path_source_path', 1).then(done, done.fail);
+          });
+
+          it('should add attachments when using sourceContent', (done) => {
+            spec.pdfToolsOpts.sourceContent = spec.sourceFiles.blank;
+            modifyPdfAndTest('attachment_path_source_content', 1).then(done, done.fail);
+          });
+        });
+
+        describe('fileDisplay or desc', () => {
+          beforeEach(() => {
+            spec.pdfToolsData[0].fileDisplay = 'mock display name 1.pdf';
+            spec.pdfToolsData[1].desc = 'mock description 2';
+
+            spec.expectedAttachments[0].filename = 'mock display name 1.pdf';
+            spec.expectedAttachments[1].desc = 'mock description 2';
+          });
+
+          it('should add attachments when using sourcePath', (done) => {
+            spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/blank.pdf');
+            modifyPdfAndTest('attachment_path_file_display_or_desc_source_path', 1).then(done, done.fail);
+          });
+
+          it('should add attachments when using sourceContent', (done) => {
+            spec.pdfToolsOpts.sourceContent = spec.sourceFiles.blank;
+            modifyPdfAndTest('attachment_path_file_display_or_desc_source_content', 1).then(done, done.fail);
+          });
+        });
+      });
+
+      describe('when given using content', () => {
+        beforeEach(() => {
+          spec.pdfToolsData = [
+            {
+              type: 'attachment',
+              content: spec.imageFiles.image1
+            },
+            {
+              type: 'attachment',
+              content: spec.imageFiles.image2
+            }
+          ];
+        });
+
+        describe('when NOT given a fileDisplay', () => {
+          beforeEach(() => {
+            // Because without a fileDisplay we can't tell what name to give the file
+            // TODO add attachment with name like "unnamed attachment"
+            spec.expectedAttachments = [];
+          });
+
+          it('should NOT add any attachment when using sourcePath', (done) => {
+            spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/blank.pdf');
+            modifyPdfAndTest('attachment_content_no_file_display_source_path', 1).then(done, done.fail);
+          });
+
+          it('should NOT add any attachment when using sourcePath', (done) => {
+            spec.pdfToolsOpts.sourceContent = spec.sourceFiles.blank;
+            modifyPdfAndTest('attachment_content_no_file_display_source_content', 1).then(done, done.fail);
+          });
+        });
+
+        describe('when given a fileDisplay', () => {
+          beforeEach(() => {
+            spec.pdfToolsData[0].fileDisplay = 'mock display name 1.png';
+            spec.pdfToolsData[1].fileDisplay = 'mock display name 2.png';
+
+            spec.expectedAttachments[0].filename = 'mock display name 1.png';
+            spec.expectedAttachments[1].filename = 'mock display name 2.png';
+          });
+
+          it('should add attachments when using sourcePath', (done) => {
+            spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/blank.pdf');
+            modifyPdfAndTest('attachment_content_and_file_display_source_path', 1).then(done, done.fail);
+          });
+
+          it('should add attachments when using sourceContent', (done) => {
+            spec.pdfToolsOpts.sourceContent = spec.sourceFiles.blank;
+            modifyPdfAndTest('attachment_content_and_file_display_source_content', 1).then(done, done.fail);
+          });
+        });
+
+        describe('when given fileDisplay and desc', () => {
+          beforeEach(() => {
+            spec.expectedAttachments[0].filename = 'mock display name 1.png';
+            spec.expectedAttachments[1].filename = 'mock display name 2.png';
+
+            spec.expectedAttachments[0].desc = 'mock description 1';
+            spec.expectedAttachments[1].desc = 'mock description 2';
+
+            spec.pdfToolsData[0].fileDisplay = 'mock display name 1.png';
+            spec.pdfToolsData[1].fileDisplay = 'mock display name 2.png';
+
+            spec.pdfToolsData[0].desc = 'mock description 1';
+            spec.pdfToolsData[1].desc = 'mock description 2';
+          });
+
+          it('should add attachments when using sourcePath', (done) => {
+            spec.pdfToolsOpts.sourcePath = specUtil.getAssetPath('src/blank.pdf');
+            modifyPdfAndTest('attachment_content_and_file_display_and_desc_source_path', 1).then(done, done.fail);
+          });
+
+          it('should add attachments when using sourceContent', (done) => {
+            spec.pdfToolsOpts.sourceContent = spec.sourceFiles.blank;
+            modifyPdfAndTest('attachment_content_and_file_display_and_desc_source_content', 1).then(done, done.fail);
+          });
+        })
+      });
+    });
+
+    describe('font', () => {
+      beforeEach(() => {
+        spec.pdfToolsData = [
+          { type: 'text', key:'field1', value: 'אחת שתיים ששלוש' },
+          { type: 'text', key:'field2', value: 'אחת שתיים שלוש One Two Three' }
+        ];
+        spec.pdfToolsOpts.sourceContent = spec.sourceFiles.text;
+      });
+
+      it('should load and use font when given as a path', (done) => {
+        // font downloaded from http://www.cunliffethompson.com/font/download.html
+        spec.pdfToolsOpts.font = specUtil.getAssetPath('shuneet_03_book_v21.OTF');
+        modifyPdfAndTest('font_path_source_content', 1).then(done, done.fail);
+      });
+
+      it('should load arialuni.ttf embedded in JAR and use it when given "arialuni.ttf"', (done) => {
+        spec.pdfToolsOpts.font = 'arialuni.ttf';
+        modifyPdfAndTest('font_arialuni_source_content', 1).then(done, done.fail);
+      });
+
+      it('should ignore Hebrew characters when NOT using a font', (done) => {
+        modifyPdfAndTest('no_font_source_content', 1).then(done, done.fail);
+      });
+    });
+
+    describe('watermarks', () => {
+      beforeEach(() => {
+        spec.pdfToolsOpts.sourceContent = spec.sourceFiles.blank;
+        spec.pdfToolsOpts.watermark = {
+          text: 'אחת שתיים שלוש One Two Three'
+        };
+      });
+
+      it('should ignore Hebrew characters when not using a font', (done) => {
+        modifyPdfAndTest('watermark_no_font', 1).then(done, done.fail);
+      });
+
+      describe('when using a font', () => {
+        beforeEach(() => {
+          spec.pdfToolsOpts.font = 'arialuni.ttf';
+        });
+
+        it('should show Hebrew characters', (done) => {
+          modifyPdfAndTest('watermark_font', 1).then(done, done.fail);
+        });
+
+        it('should allow to set the the English part before the Hebrew part', (done) => {
+          spec.pdfToolsOpts.watermark.text = 'One Two Three אחת שתיים שלוש';
+          modifyPdfAndTest('watermark_english_before_hebrew', 1).then(done, done.fail);
+        });
+
+        it('should should allow to customize opacity', (done) => {
+          spec.pdfToolsOpts.watermark.opacity = 75;
+          modifyPdfAndTest('watermark_font_custom_opacity', 1).then(done, done.fail);
+        });
+
+        it('should should allow to customize rotation', (done) => {
+          spec.pdfToolsOpts.watermark.rotation = 0;
+          modifyPdfAndTest('watermark_font_custom_rotation', 1).then(done, done.fail);
+        });
+
+        it('should should allow to customize font size', (done) => {
+          spec.pdfToolsOpts.watermark.fontSize = 24;
+          modifyPdfAndTest('watermark_font_custom_font_size', 1).then(done, done.fail);
+        });
+
+        it('should allow to customize all', (done) => {
+          spec.pdfToolsOpts.watermark.opacity = 75;
+          spec.pdfToolsOpts.watermark.rotation = 0;
+          spec.pdfToolsOpts.watermark.fontSize = 24;
+          modifyPdfAndTest('watermark_font_custom_all', 1).then(done, done.fail);
+        });
+      });
+    });
+
+    describe('digital signatures', () => {
+      beforeEach(() => {
+        spec.pdfToolsOpts.sourceContent = spec.sourceFiles.blank;
+
+        spec.testSignatures = () => {
+          if (!spec.expectedSignatures) throw new Error('must set spec.expectedSignatures');
+          return spec.pdfTools({
+            sourceContent: spec.resultPdf,
+            getSignatures: true
+          }).then((signatures) => {
+            expect(signatures).toEqual(spec.expectedSignatures);
+          });
+        }
+      });
+
+      it('should NOT sign the file when cert is not given', (done) => {
+        spec.expectedSignatures = [];
+        modifyPdfAndTest('signature_no_signature', 1).then(() => {
+          return spec.testSignatures();
         }).then(done, done.fail);
       });
 
-      stdout.on('data',(buffer) => {
-        resBuffers.push(buffer);
-      });
-    }
-
-    const describeFn = specOpts.fit ?
-        fdescribe :
-        describe;
-
-    describeFn(`${specOpts.desc} (spec ${specIdx} )`, () => {
-      // Create a temporary file with the field data
-      beforeEach((done) => {
-        const data = _.isFunction(specOpts.data)
-          ? specOpts.data()
-          : specOpts.data;
-
-        if (data) {
-          Tmp.fileAsync('tepez-pdf-tools-test').spread((path, fd) => {
-            spec.dataFilePath = path;
-            Fs.writeSync(fd, JSON.stringify(data));
-            Fs.closeSync(fd);
-          }).delay(1000).then(done, done.fail);
-        } else {
-          done();
-        }
+      it('should sign the file when cert is given', (done) => {
+        spec.expectedSignatures = [
+          {
+            field_name: 'Signature1'
+          }
+        ];
+        spec.pdfToolsOpts.cert = specUtil.getAssetPath('certificate.pfx');
+        spec.pdfToolsOpts.certpass = 'password';
+        spec.pdfToolsOpts.certformat = 'pkcs12';
+        modifyPdfAndTest('signature_signature_1', 1).then(() => {
+          return spec.testSignatures();
+        }).then(done, done.fail);
       });
 
-      it('normal execution', (done) => {
-        runTest(false, done);
-      });
-
-      it('using nailgun', (done) => {
-        runTest(true, done);
+      it('should use pkcs12 as default certformat', (done) => {
+        spec.expectedSignatures = [
+          {
+            field_name: 'Signature1'
+          }
+        ];
+        spec.pdfToolsOpts.cert = specUtil.getAssetPath('certificate.pfx');
+        spec.pdfToolsOpts.certpass = 'password';
+        modifyPdfAndTest('signature_signature_no_certformat', 1).then(() => {
+          return spec.testSignatures();
+        }).then(done, done.fail);
       });
     });
+  };
+
+  describe('when NOT using nailgun', () => {
+    beforeEach(() => {
+      spec.pdfToolsOpts.nailgun = false;
+    });
+
+    runSpecs();
+  });
+
+  describe('when using nailgun', () => {
+    beforeEach(() => {
+      spec.pdfToolsOpts.nailgun = true;
+    });
+
+    runSpecs();
   });
 
   it('should have created only a single log file and release it', () => {

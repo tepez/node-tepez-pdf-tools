@@ -43,29 +43,14 @@ exports.prepareSpecsAssets = () => {
 
     let sourceFiles, expectedFiles, imageFiles;
 
-    beforeAll((done) => {
-        jasmine.getEnv().imageDiffTester.initDirectories().then(done, done.fail);
-    });
-
     afterAll(() => {
         sourceFiles = expectedFiles = imageFiles = null;
-    });
-
-    beforeAll((done) => {
-        exports.clearResultDirectory().then(done, done.fail);
     });
 
     // read source files
     beforeAll((done) => {
         exports.readDirectory('src').then((files) => {
             sourceFiles = files;
-        }).then(done, done.fail);
-    });
-
-    // read expected files
-    beforeAll((done) => {
-        exports.readDirectory('expected').then((files) => {
-            expectedFiles = files;
         }).then(done, done.fail);
     });
 
@@ -79,22 +64,6 @@ exports.prepareSpecsAssets = () => {
             imageFiles = files;
         }).then(done, done.fail);
     });
-};
-
-// since there are some minor changes between the expected PDF files and the files we
-// generate at test time, we just make sure that X percent of them is the same
-exports.getMatchRate = function (buffer1, buffer2) {
-    if (!buffer1 || !buffer2) {
-        return 0;
-    }
-
-    let matches = 0;
-    for (let i = 0; i < Math.min(buffer1.length, buffer2.length); i++) {
-        if (buffer1[i] === buffer2[i]) {
-            matches += 1;
-        }
-    }
-    return matches / Math.max(buffer1.length, buffer2.length)
 };
 
 exports.readDirectory = function (dir) {
