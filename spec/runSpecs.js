@@ -20,10 +20,15 @@ jasmine.loadConfig({
 
 jasmine.addReporter(new NodeJasmineImageDiffTester(Config.imageDiff));
 jasmine.addReporter(new JasmineSpecReporter.SpecReporter({
-    displaySpecDuration: true,
-    displayFailuresSummary: true,
-    displaySuccessfulSpec: true,
-    displayStacktrace: 'all'
+    spec: {
+        displayDuration: true,
+        displayStacktrace: true,
+        displaySuccessful: true
+    },
+    summary: {
+        displayFailed: true,
+        displayPending: true
+    }
 }));
 
 // Disable default dots reporter since we use jasmine-spec-reporter
