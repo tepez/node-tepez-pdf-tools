@@ -49,7 +49,8 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
     spec.pdfToolsData = null;
   });
 
-  // Create a temporary file with the field data
+  // Create a temporary file with the fields data and add it to the options passed
+  // to tepez-pdf-tools
   const initPdfToolsData = () => {
     if (!spec.pdfToolsData) return Bluebird.resolve();
     
@@ -62,54 +63,80 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
     }).delay(1000);
   };
 
+  // Run tepez-pdf-tools and capture the result file
+  const modifyPdf = (name) => {
+    return new Promise((resolve, reject) => {
+      const resBuffers = [];
+
+      const stdout = spec.pdfTools(spec.pdfToolsOpts, (err) => {
+        const res = Buffer.concat(resBuffers);
+        spec.resultPdf = res;
+        if (err) return reject(err);
+
+        const resPath = Path.join(
+            __dirname,
+            'results',
+            name + (spec.pdfToolsOpts.nailgun ? '-nailgun' : '') + '.pdf'
+        );
+        Fs.writeFileSync(resPath, res);
+        resolve();
+      });
+
+      stdout.on('data',(buffer) => {
+        resBuffers.push(buffer);
+      });
+    });
+  };
+
+  // Test the attachments added to the resulted PDF
+  const testAttachments = () => {
+    return spec.pdfTools({
+      sourceContent: spec.resultPdf,
+      getAttachments: true
+    }).then((attachments) => {
+      expect(attachments).toEqual(spec.expectedAttachments || []);
+    });
+  };
+
+  // Visually test the resulted PDF against the expected image
+  const testPdfImageDiff = (name, expectedPagesNum) => {
+    let imageDiffTester = jasmine.getEnv().imageDiffTester;
+
+    // Take each page of the PDF as a separate image
+    return Bluebird.each(_.range(0, expectedPagesNum), (pageNum) => {
+
+      const pngStream = specUtil.pdfToPng(spec.resultPdf, pageNum);
+      // the ImagemagickStream might multiple errors
+      // but StreamToArray removes the error listener after the first error
+      // so if add this listener so we won't get errors like:
+      //    events.js:160
+      //      throw er; // Unhandled 'error' event
+      // which will stop jasmine
+      pngStream.on('error', (err) => {
+        console.log(`Imagemagick error: ${err}`);
+      });
+
+      return imageDiffTester.imageTaken(`${name}-${pageNum}`, pngStream);
+    });
+  };
+
+  const testSignatures = () => {
+    if (!spec.expectedSignatures) throw new Error('must set spec.expectedSignatures');
+    return spec.pdfTools({
+      sourceContent: spec.resultPdf,
+      getSignatures: true
+    }).then((signatures) => {
+      expect(signatures).toEqual(spec.expectedSignatures);
+    });
+  };
+
   const modifyPdfAndTest = (name, expectedPagesNum) => {
     return initPdfToolsData().then(() => {
-      return new Promise((resolve, reject) => {
-        const resBuffers = [];
-
-        const stdout = spec.pdfTools(spec.pdfToolsOpts, (err) => {
-          const res = Buffer.concat(resBuffers);
-          spec.resultPdf = res;
-          expect(err).toBe(null);
-
-          const resPath = Path.join(
-              __dirname,
-              'results',
-              name + (spec.pdfToolsOpts.nailgun ? '-nailgun' : '') + '.pdf'
-          );
-          Fs.writeFileSync(resPath, res);
-
-          let imageDiffTester = jasmine.getEnv().imageDiffTester;
-
-          // Take each page of the PDF as a separate image
-          Bluebird.map(_.range(0, expectedPagesNum), (pageNum) => {
-
-            const pngStream = specUtil.pdfToPng(res, pageNum);
-            // the ImagemagickStream might multiple errors
-            // but StreamToArray removes the error listener after the first error
-            // so if add this listener so we won't get errors like:
-            //    events.js:160
-            //      throw er; // Unhandled 'error' event
-            // which will stop jasmine
-            pngStream.on('error', (err) => {
-              console.log(`Imagemagick error: ${err}`);
-            });
-            return imageDiffTester.imageTaken(`${name}-${pageNum}`, pngStream)
-
-          }).then(() => {
-            return spec.pdfTools({
-              sourceContent: res,
-              getAttachments: true
-            });
-          }).then((attachments) => {
-            expect(attachments).toEqual(spec.expectedAttachments || []);
-          }).then(resolve, reject);
-        });
-
-        stdout.on('data',(buffer) => {
-          resBuffers.push(buffer);
-        });
-      });
+      return modifyPdf(name);
+    }).then(() => {
+      return testPdfImageDiff(name, expectedPagesNum);
+    }).then(() => {
+      return testAttachments();
     });
   };
 
@@ -584,22 +611,12 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
     describe('digital signatures', () => {
       beforeEach(() => {
         spec.pdfToolsOpts.sourceContent = spec.sourceFiles.blank;
-
-        spec.testSignatures = () => {
-          if (!spec.expectedSignatures) throw new Error('must set spec.expectedSignatures');
-          return spec.pdfTools({
-            sourceContent: spec.resultPdf,
-            getSignatures: true
-          }).then((signatures) => {
-            expect(signatures).toEqual(spec.expectedSignatures);
-          });
-        }
       });
 
       it('should NOT sign the file when cert is not given', (done) => {
         spec.expectedSignatures = [];
         modifyPdfAndTest('signature_no_signature', 1).then(() => {
-          return spec.testSignatures();
+          return testSignatures();
         }).then(done, done.fail);
       });
 
@@ -613,7 +630,7 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
         spec.pdfToolsOpts.certpass = 'password';
         spec.pdfToolsOpts.certformat = 'pkcs12';
         modifyPdfAndTest('signature_signature_1', 1).then(() => {
-          return spec.testSignatures();
+          return testSignatures();
         }).then(done, done.fail);
       });
 
@@ -626,7 +643,7 @@ describe('tepez-pdf-tools, modifying PDF files', () => {
         spec.pdfToolsOpts.cert = specUtil.getAssetPath('certificate.pfx');
         spec.pdfToolsOpts.certpass = 'password';
         modifyPdfAndTest('signature_signature_no_certformat', 1).then(() => {
-          return spec.testSignatures();
+          return testSignatures();
         }).then(done, done.fail);
       });
     });
