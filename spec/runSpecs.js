@@ -3,6 +3,7 @@ const Path = require('path');
 require('dotenv').config({ path: Path.join(__dirname, '.env') });
 const Jasmine = require('jasmine');
 const JasmineSpecReporter = require('jasmine-spec-reporter');
+const JasmineReporters = require('jasmine-reporters');
 const NodeJasmineImageDiffTester = require('image-diff-tester/lib/nodeJasmine');
 const Config = require('./config');
 const NailgunServer = require('./nailgunServer');
@@ -19,6 +20,12 @@ jasmine.loadConfig({
 });
 
 jasmine.addReporter(new NodeJasmineImageDiffTester(Config.imageDiff));
+jasmine.addReporter(new JasmineReporters.JUnitXmlReporter({
+    package: 'spec',
+    useDotNotation: false,
+    savePath: 'reports',
+    filePrefix: 'spec'
+}));
 jasmine.addReporter(new JasmineSpecReporter.SpecReporter({
     spec: {
         displayDuration: true,

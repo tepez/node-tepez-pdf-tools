@@ -29,6 +29,7 @@
     "image-diff-tester": "^0.2.0",
     "imagemagick-stream": "^4.1.1",
     "jasmine": "^2.4.1",
+    "jasmine-reporters": "^2.2.1",
     "jasmine-spec-reporter": "^4.1.1",
     "mkdirp": "^0.5.1",
     "mock-spawn": "^0.2.6",
